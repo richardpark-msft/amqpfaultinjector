@@ -11,7 +11,7 @@ type CommonFlags struct {
 }
 
 func AddCommonFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("host", "", "The hostname of the service we're proxying to (ex: <server>.servicebus.windows.net")
+	cmd.PersistentFlags().String("host", "", "The hostname of the service we're proxying to (ex: <server>.servicebus.windows.net)")
 	cmd.PersistentFlags().String("logs", ".", "The directory to write any logs or trace files")
 
 	_ = cmd.MarkPersistentFlagRequired(HostFlagName)
