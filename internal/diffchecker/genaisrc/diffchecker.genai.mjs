@@ -5,14 +5,13 @@ import fs from 'fs';
 // > npx genaiscript run diffchecker.genai.mjs
 
 // Read the prompt from the markdown file
-const prompt_file = '.genaiscript/prompts/amqpdiff.prompt.md';
+const prompt_file = 'prompts/amqpdiff.prompt.md';
 const prompt = fs.readFileSync(prompt_file, 'utf-8');
 const log_py = 'amqpproxy-traffic-python.jsonl';
 const log_net = 'amqpproxy-traffic-net.jsonl';
 
 script({
     model: "azure:gpt-4o",
-//    files: [prompt_file, log_py, log_net]
 })
 
 $`${prompt}`
