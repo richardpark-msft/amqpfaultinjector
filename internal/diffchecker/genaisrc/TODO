@@ -1,2 +1,0 @@
-- Add in more info on structured AMQP data so that the output Python script for diff checking is more general rather than looking at an exact log.
-- Provide body of Python script structure

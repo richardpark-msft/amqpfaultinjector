@@ -14,12 +14,9 @@ script({
     model: "azure:gpt-4o",
 })
 
+// Prompting twice to see if this improves the results
 $`${prompt}`
 def("NET", fs.readFileSync(log_net, 'utf-8'))
 def("PYTHON", fs.readFileSync(log_py, 'utf-8'))
-//$`You are an expert at the AMQP v1.0 protocol (https://www.amqp.org/sites/amqp.org/files/amqp.pdf).
-//Identify the main operation that is being performed in the NET file and the PYTHON file. Examples of operations
-//are send and receive. The most important frames to look at to determine the operation are the frames that come in after CBS authentication has been established.`
-
 $`${prompt}`.cacheControl("ephemeral")
 //defDiff("DIFF", log_py, log_net)
