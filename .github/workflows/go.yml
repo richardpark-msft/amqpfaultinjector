@@ -32,8 +32,14 @@ jobs:
           GOOS: darwin
           GOARCH: arm64
 
-      - name: Build linux/amd64
+      - name: Build linux/amd64 (amqpproxy)
         run: go build -o amqpproxy_linux_amd64 -v ./cmd/amqpproxy
+        env:
+          GOOS: linux
+          GOARCH: amd64
+
+      - name: Build linux/amd64 (faultinjector)
+        run: go build -o amqpproxy_linux_amd64 -v ./cmd/faultinjector
         env:
           GOOS: linux
           GOARCH: amd64
