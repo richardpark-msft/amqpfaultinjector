@@ -1,7 +1,6 @@
 # Sample Raw Fault Injector
 
-This is a imple self-contained example of a fault injector. You can use this as a starting point for writing your own fault injector or to test out ideas.
-
+This is a simple self-contained example of a fault injector. You can use this as a starting point for writing your own fault injector or to test out ideas.
 NOTE: you'll be editing this project, so some basic Go language knowledge is required.
 
 ## Running
