@@ -21,7 +21,7 @@ func ValidateLog(t *testing.T, jsonlFile string) {
 	foundCBS := false
 
 	for _, line := range lines {
-		if line.EntityPath == "$cbs" && line.Direction == "out" && line.FrameType == "Transfer" {
+		if line.EntityPath == "$cbs" && line.Direction == logging.DirectionOut && line.FrameType == frames.BodyTypeTransfer {
 			foundCBS = true
 
 			require.Equal(t, "put-token", line.MessageData.CBSData.ApplicationProperties["operation"])
