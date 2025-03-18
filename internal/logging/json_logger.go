@@ -80,7 +80,7 @@ type JSONLine struct {
 	// Metadata are extra properties that can be added by logging implementations.
 	Metadata any `json:",omitempty"`
 
-	*frames.Frame
+	Frame *frames.Frame
 
 	MessageData JSONMessageData `json:",omitempty"`
 }
