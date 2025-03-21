@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -278,7 +278,7 @@ func mustCreateFaultInjector(t *testing.T, createCommand func(ctx context.Contex
 	t.Logf("Command line args for fault injector: %#v", args)
 	rootCmd.SetArgs(args)
 
-	jsonlFile := path.Join(dir, "faultinjector-traffic.json")
+	jsonlFile := filepath.Join(dir, "faultinjector-traffic.json")
 
 	go func() {
 		t.Logf("Starting fault injector command")

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/Azure/amqpfaultinjector/cmd/internal"
@@ -52,8 +52,8 @@ func runFaultInjector(ctx context.Context, cmd *cobra.Command, injector faultinj
 		cf.Host,
 		injector,
 		&faultinjectors.FaultInjectorOptions{
-			JSONLFile:     path.Join(cf.LogsDir, "faultinjector-traffic.json"),
-			TLSKeyLogFile: path.Join(cf.LogsDir, "faultinjector-tlskeys.txt"),
+			JSONLFile:     filepath.Join(cf.LogsDir, "faultinjector-traffic.json"),
+			TLSKeyLogFile: filepath.Join(cf.LogsDir, "faultinjector-tlskeys.txt"),
 			AddressFile:   addressFile,
 			CertDir:       cf.CertDir,
 		})

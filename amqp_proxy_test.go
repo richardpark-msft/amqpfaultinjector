@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -64,7 +64,7 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 		os.RemoveAll(dir)
 	})
 
-	jsonlFile := path.Join(dir, "amqpproxy-traffic")
+	jsonlFile := filepath.Join(dir, "amqpproxy-traffic")
 
 	amqpProxy, err := amqpfaultinjector.NewAMQPProxy(
 		"localhost:5671",
