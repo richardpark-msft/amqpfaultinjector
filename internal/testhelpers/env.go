@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"testing"
 
 	"github.com/joho/godotenv"
 )
@@ -11,26 +12,28 @@ import (
 type TestEnv struct {
 	ServiceBusEndpoint string
 	ServiceBusQueue    string
-	LiveTests          bool
+	Disabled           string
+}
+
+func (te TestEnv) SkipIfNotLive(t *testing.T) {
+	if te.Disabled != "" {
+		t.Skipf("Skipping test: %s", te.Disabled)
+	}
 }
 
 func LoadEnv(dir string) TestEnv {
-	var envs []string
-
-	if dir != "" {
-		envs = []string{path.Join(dir, ".env")}
-	}
+	envs := []string{path.Join(dir, ".env")}
 
 	if err := godotenv.Load(envs...); err != nil {
 		slog.Warn("No .env file - live tests will not run")
-		return TestEnv{LiveTests: false}
+		return TestEnv{Disabled: "No .env file - live tests will not run"}
 	}
 
 	te := TestEnv{ServiceBusEndpoint: os.Getenv("SERVICEBUS_ENDPOINT"), ServiceBusQueue: os.Getenv("SERVICEBUS_QUEUE")}
 
 	if te.ServiceBusEndpoint == "" || te.ServiceBusQueue == "" {
 		slog.Error("SERVICEBUS_ENDPOINT and SERVICEBUS_QUEUE must be defined in the environment")
-		return TestEnv{LiveTests: false}
+		return TestEnv{Disabled: "SERVICEBUS_ENDPOINT and SERVICEBUS_QUEUE must be defined in the environment"}
 	}
 
 	return te

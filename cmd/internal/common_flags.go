@@ -4,7 +4,7 @@ import "github.com/spf13/cobra"
 
 const HostFlagName = "host"
 const LogsFlagName = "logs"
-const CertFlagName = "certs"
+const CertFlagName = "cert"
 
 type CommonFlags struct {
 	Host    string
@@ -15,7 +15,7 @@ type CommonFlags struct {
 func AddCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(HostFlagName, "", "The hostname of the service we're proxying to (ex: <server>.servicebus.windows.net)")
 	cmd.PersistentFlags().String(LogsFlagName, ".", "The directory to write any logs or trace files")
-	cmd.PersistentFlags().String(CertFlagName, ".", "The directory to write the TLS cert for the proxy's endpoint. If the cert already exists, it is re-used.")
+	cmd.PersistentFlags().String(CertFlagName, ".", "The directory to write the TLS server.cert and server.key used for the proxy's endpoint. If the files already exist, they are re-used.")
 
 	_ = cmd.MarkPersistentFlagRequired(HostFlagName)
 }

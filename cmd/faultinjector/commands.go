@@ -55,6 +55,7 @@ func runFaultInjector(ctx context.Context, cmd *cobra.Command, injector faultinj
 			JSONLFile:     path.Join(cf.LogsDir, "faultinjector-traffic.json"),
 			TLSKeyLogFile: path.Join(cf.LogsDir, "faultinjector-tlskeys.txt"),
 			AddressFile:   addressFile,
+			CertDir:       cf.CertDir,
 		})
 
 	if err != nil {

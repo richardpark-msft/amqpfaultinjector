@@ -14,13 +14,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testEnv = testhelpers.LoadEnv("../..")
+var testEnv testhelpers.TestEnv
 
 func TestMain(m *testing.M) {
+	testEnv = testhelpers.LoadEnv("../..")
 	os.Exit(m.Run())
 }
 
 func TestAMQPProxy(t *testing.T) {
+	testEnv.SkipIfNotLive(t)
+
 	testData := mustCreateAMQPProxy(t, []string{})
 
 	receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
@@ -91,6 +94,7 @@ func mustCreateAMQPProxy(t *testing.T, args []string) *testAMQPProxy {
 	args = append(args,
 		cmd.Name(),
 		"--logs", dir,
+		"--cert", dir,
 		"--host", testEnv.ServiceBusEndpoint)
 
 	t.Logf("Command line args for fault injector: %#v", args)

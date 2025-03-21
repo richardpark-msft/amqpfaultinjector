@@ -71,6 +71,7 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 		serviceBusEndpoint,
 		&amqpfaultinjector.AMQPProxyOptions{
 			BaseJSONName: jsonlFile,
+			CertDir:      dir,
 		})
 	require.NoError(t, err)
 

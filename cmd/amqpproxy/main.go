@@ -55,6 +55,7 @@ func newAMQPProxyCommand(ctx context.Context) *cobra.Command {
 				BaseBinName:                baseBinName,
 				DisableTLSForLocalEndpoint: *disableTLS,
 				DisableStateTracing:        *disableStateTracking,
+				CertDir:                    cf.CertDir,
 			})
 
 		if err != nil {
