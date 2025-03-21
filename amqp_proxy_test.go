@@ -3,6 +3,7 @@ package amqpfaultinjector_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -41,6 +42,91 @@ func TestAMQPProxy(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, sender.Close(context.Background()))
+
+	require.NoError(t, testData.Close())
+
+	testhelpers.ValidateLog(t, testData.JSONLFile+"-1.json")
+}
+
+func TestAMQPProxy_Send1000(t *testing.T) {
+	testData := mustCreateAMQPProxy(t)
+
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	require.NoError(t, err)
+
+	client, err := azservicebus.NewClient(testData.ServiceBusEndpoint, cred, &azservicebus.ClientOptions{
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+		CustomEndpoint: "127.0.0.1:5671",
+		RetryOptions: azservicebus.RetryOptions{
+			MaxRetries: -1,
+		},
+	})
+	require.NoError(t, err)
+
+	sender, err := client.NewSender(testData.ServiceBusQueue, nil)
+	require.NoError(t, err)
+
+	var batch *azservicebus.MessageBatch
+	buff := make([]byte, 1000)
+
+Loop:
+	for i := 0; i < 1000; i++ {
+		if batch == nil {
+			tmpBatch, err := sender.NewMessageBatch(context.Background(), nil)
+			require.NoError(t, err)
+			batch = tmpBatch
+		}
+
+		err := batch.AddMessage(&azservicebus.Message{
+			Body: buff,
+		}, nil)
+
+		switch {
+		case errors.Is(err, azservicebus.ErrMessageTooLarge):
+			t.Logf("Sending batch, batch full")
+			err = sender.SendMessageBatch(context.Background(), batch, nil)
+			require.NoError(t, err)
+			batch = nil
+			i--
+		case i == 999:
+			t.Logf("Sending batch, i == 999")
+			err = sender.SendMessageBatch(context.Background(), batch, nil)
+			require.NoError(t, err)
+			break Loop
+		case err != nil:
+			require.NoError(t, err)
+		default:
+		}
+	}
+
+	require.NoError(t, sender.Close(context.Background()))
+
+	receiver, err := client.NewReceiverForQueue(testData.ServiceBusQueue, nil)
+	require.NoError(t, err)
+
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		messages, err := receiver.ReceiveMessages(ctx, 200, &azservicebus.ReceiveMessagesOptions{
+			//TimeAfterFirstMessage: time.Second,
+		})
+
+		if errors.Is(err, context.DeadlineExceeded) {
+			t.Logf("receive call timed out")
+			break
+		}
+
+		require.NoError(t, err)
+
+		for _, m := range messages {
+			err = receiver.CompleteMessage(context.Background(), m, nil)
+			require.NoError(t, err)
+		}
+
+		t.Logf("Received [%d] messages", len(messages))
+	}
 
 	require.NoError(t, testData.Close())
 
