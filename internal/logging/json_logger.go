@@ -68,12 +68,13 @@ type JSONMessageData struct {
 }
 
 type JSONLine struct {
-	Time       time.Time
-	Direction  Direction
-	EntityPath string  `json:",omitempty"`
-	Connection *string `json:",omitempty"`
-	Receiver   *bool   `json:",omitempty"`
-	LinkName   *string `json:",omitempty"`
+	Time         time.Time
+	Direction    Direction
+	EntityPath   string   `json:",omitempty"`
+	Receiver     *bool    `json:",omitempty"`
+	SessionLinks []string `json:",omitempty"`
+	Connection   *string  `json:",omitempty"`
+	LinkName     *string  `json:",omitempty"`
 
 	FrameType frames.BodyType `json:",omitempty"`
 
@@ -106,26 +107,33 @@ func (l *JSONLogger) flush(out bool) error {
 			return nil
 		}
 
-		switch frame := pi.(type) {
+		switch fr := pi.(type) {
 		case *frames.Frame:
+			var sessionLinks []string
+
+			if _, isDisposition := fr.Body.(*frames.PerformDisposition); isDisposition && l.sm != nil {
+				sessionLinks = l.sm.LookupLocalSessionLinks(fr.Header.Channel)
+			}
+
 			jsonLine := &JSONLine{
-				Time:      time.Now(),
-				Direction: direction,
-				Frame:     frame,
-				FrameType: frame.Body.Type(),
+				Time:         time.Now(),
+				Direction:    direction,
+				SessionLinks: sessionLinks,
+				Frame:        fr,
+				FrameType:    fr.Body.Type(),
 			}
 
 			if l.sm != nil {
-				l.sm.AddFrame(out, frame)
+				l.sm.AddFrame(out, fr)
 
 				if openFrame := l.sm.GetOpenFrame(true); openFrame != nil {
 					jsonLine.Connection = &openFrame.Body.ContainerID
 				}
 			}
 
-			updateJSONLine(out, l.sm, frame, jsonLine)
+			updateJSONLine(out, l.sm, fr, jsonLine)
 
-			if err := l.transformers.Apply(frame, jsonLine); err != nil {
+			if err := l.transformers.Apply(fr, jsonLine); err != nil {
 				return err
 			}
 
@@ -141,7 +149,7 @@ func (l *JSONLogger) flush(out bool) error {
 		case frames.Preamble:
 			// just ignore this - it's a constant and there's no real value in it for diagnostics.
 		default:
-			utils.Panicf("Unhandled type %T", frame)
+			utils.Panicf("Unhandled type %T", fr)
 		}
 	}
 }
