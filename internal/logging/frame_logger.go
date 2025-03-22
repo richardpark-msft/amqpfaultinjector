@@ -40,12 +40,19 @@ func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any) error {
 		direction = DirectionOut
 	}
 
+	var sessionLinks []string
+
+	if _, isDisposition := fr.Body.(*frames.PerformDisposition); isDisposition && l.sm != nil {
+		sessionLinks = l.sm.LookupLocalSessionLinks(fr.Header.Channel)
+	}
+
 	jsonLine := &JSONLine{
-		Time:      time.Now(),
-		Direction: direction,
-		Frame:     fr,
-		FrameType: fr.Body.Type(),
-		Metadata:  metadata,
+		Time:         time.Now(),
+		Direction:    direction,
+		Frame:        fr,
+		FrameType:    fr.Body.Type(),
+		SessionLinks: sessionLinks,
+		Metadata:     metadata,
 	}
 
 	l.sm.AddFrame(out, fr)

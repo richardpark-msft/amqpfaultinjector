@@ -42,6 +42,21 @@ func TestAMQPProxy(t *testing.T) {
 
 	require.NoError(t, sender.Close(context.Background()))
 
+	receiver, err := client.NewReceiverForQueue(testData.ServiceBusQueue, nil)
+	require.NoError(t, err)
+
+	messages, err := receiver.ReceiveMessages(context.Background(), 1, nil)
+	require.NoError(t, err)
+
+	_, err = receiver.PeekMessages(context.Background(), 1, nil)
+	require.NoError(t, err)
+
+	err = receiver.CompleteMessage(context.Background(), messages[0], nil)
+	require.NoError(t, err)
+
+	err = receiver.Close(context.Background())
+	require.NoError(t, err)
+
 	require.NoError(t, testData.Close())
 
 	testhelpers.ValidateLog(t, testData.JSONLFile+"-1.json")

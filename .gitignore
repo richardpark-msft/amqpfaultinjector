@@ -24,3 +24,5 @@ samples/faultinjectorsample_js/package-lock.json
 
 # temp folder when we're creating a release
 _bin
+server.crt
+server.key

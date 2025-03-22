@@ -1,6 +1,9 @@
 package proto
 
 import (
+	"slices"
+	"sync"
+
 	"github.com/Azure/amqpfaultinjector/internal/proto/encoding"
 	"github.com/Azure/amqpfaultinjector/internal/proto/frames"
 	"github.com/Azure/amqpfaultinjector/internal/utils"
@@ -19,6 +22,9 @@ type StateMap struct {
 
 	remoteOpenFrame *StateFrame[*frames.PerformOpen]
 	localOpenFrame  *StateFrame[*frames.PerformOpen]
+
+	localSessionLinksMu *sync.Mutex
+	localSessionLinks   map[uint16][]string // NOTE: these are very short lists (often times, they have only a single entry).
 }
 
 func NewStateMap() *StateMap {
@@ -29,7 +35,16 @@ func NewStateMap() *StateMap {
 		remoteAttach:  attachFramesByChannelAndHandle{},
 
 		localByRoleAndName: attachFramesByRoleAndName{},
+
+		localSessionLinksMu: &sync.Mutex{},
+		localSessionLinks:   map[uint16][]string{},
 	}
+}
+
+func (sm *StateMap) LookupLocalSessionLinks(channel uint16) []string {
+	sm.localSessionLinksMu.Lock()
+	defer sm.localSessionLinksMu.Unlock()
+	return sm.localSessionLinks[channel]
 }
 
 func (sm *StateMap) AddFrame(out bool, fr *frames.Frame) {
@@ -38,11 +53,31 @@ func (sm *StateMap) AddFrame(out bool, fr *frames.Frame) {
 		sm.SetOpenFrame(out, newStateFrame(fr, body))
 	case *frames.PerformAttach:
 		if out {
+			sm.localSessionLinksMu.Lock()
+			sm.localSessionLinks[fr.Header.Channel] = append(sm.localSessionLinks[fr.Header.Channel], body.Name)
+			sm.localSessionLinksMu.Unlock()
+
 			sm.outboundAttach(newStateFrame(fr, body))
 		} else {
 			sm.incomingAttach(newStateFrame(fr, body))
 		}
+	case *frames.PerformDetach:
+		if out {
+			name := sm.LookupLocalAttachFrame(fr.Header.Channel, body.Handle).Body.Name
+
+			sm.localSessionLinksMu.Lock()
+
+			for i, v := range sm.localSessionLinks[fr.Header.Channel] {
+				if v == name {
+					sm.localSessionLinks[fr.Header.Channel] = slices.Delete(sm.localSessionLinks[fr.Header.Channel], i, i)
+					break
+				}
+			}
+
+			sm.localSessionLinksMu.Unlock()
+		}
 	}
+
 }
 
 func (sm *StateMap) GetOpenFrame(out bool) *StateFrame[*frames.PerformOpen] {
