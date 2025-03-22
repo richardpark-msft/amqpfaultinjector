@@ -41,13 +41,18 @@ func ValidateLog(t *testing.T, jsonlFile string) {
 			require.NotEmpty(t, line.EntityPath)
 			require.NotContains(t, line.EntityPath, "reply") // ie, RPC links use a particular pattern, but we don't want those to be used for EntityPath.
 
+		case frames.BodyTypeDisposition:
+			if line.Direction == logging.DirectionOut {
+				require.NotEmpty(t, line.SessionLinks)
+			}
 		case
 			// session frames don't have an entity path
 			frames.BodyTypeBegin,
-			frames.BodyTypeEnd,
-			frames.BodyTypeDisposition,
+			frames.BodyTypeEnd:
+			break
+
+		case frames.BodyTypeOpen,
 			// connection level frames don't have an entity path
-			frames.BodyTypeOpen,
 			frames.BodyTypeClose,
 			frames.BodyTypeSASLChallenge,
 			frames.BodyTypeSASLInit,
@@ -68,12 +73,13 @@ func ValidateLog(t *testing.T, jsonlFile string) {
 // This type is exactly the same as JSONLine except for Frame and Extra, which are left as raw messages
 // which can be deserialized into a more specific type.
 type logLine struct {
-	Time       time.Time
-	Direction  logging.Direction
-	EntityPath string  `json:",omitempty"`
-	Connection *string `json:",omitempty"`
-	Receiver   *bool   `json:",omitempty"`
-	LinkName   *string `json:",omitempty"`
+	Time         time.Time
+	Direction    logging.Direction
+	EntityPath   string `json:",omitempty"`
+	SessionLinks []string
+	Connection   *string `json:",omitempty"`
+	Receiver     *bool   `json:",omitempty"`
+	LinkName     *string `json:",omitempty"`
 
 	Frame struct {
 		Header frames.Header
@@ -87,6 +93,8 @@ type logLine struct {
 		logging.JSONMessageData
 		Message json.RawMessage
 	}
+
+	OrigLine string
 }
 
 func (ll logLine) RawBody() []byte {
@@ -106,6 +114,8 @@ func MustReadJSON(t *testing.T, path string) []logLine {
 
 		err := json.Unmarshal(scn.Bytes(), &line)
 		require.NoError(t, err)
+
+		line.OrigLine = scn.Text()
 
 		lines = append(lines, *line)
 	}
