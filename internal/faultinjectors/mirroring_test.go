@@ -241,6 +241,36 @@ func TestMirrorParams_Address_LinkFrame(t *testing.T) {
 
 		require.Equal(t, "testQueue", p.Address())
 	})
+
+	t.Run("$cbs receiver", func(t *testing.T) {
+		sm := loadCBSStateMap(t)
+
+		p := MirrorCallbackParams{
+			Out: true,
+			Frame: &frames.Frame{
+				Header: frames.Header{Channel: 200},
+				Body: &frames.PerformFlow{
+					Handle: utils.Ptr(uint32(201)),
+				},
+			},
+			StateMap: sm,
+		}
+
+		require.Equal(t, "$cbs", p.Address())
+
+		p = MirrorCallbackParams{
+			Out: false,
+			Frame: &frames.Frame{
+				Header: frames.Header{Channel: 0},
+				Body: &frames.PerformFlow{
+					Handle: utils.Ptr(uint32(1)),
+				},
+			},
+			StateMap: sm,
+		}
+
+		require.Equal(t, "$cbs", p.Address())
+	})
 }
 
 func newFrameLoggerForTest(t *testing.T, prefix string) *logging.FrameLogger {
@@ -325,6 +355,30 @@ func loadStateMap(t *testing.T) *proto.StateMap {
 	out = false
 	remoteReceiverAF := sm.LookupAttachFrame(out, 0, 0)
 	require.Equal(t, "testQueue", remoteReceiverAF.Body.Address(out))
+
+	return sm
+}
+
+func loadCBSStateMap(t *testing.T) *proto.StateMap {
+	sm := proto.NewStateMap()
+
+	// handle/channel are 200 for these example files.
+	reader, err := os.Open("testdata/cbs_receiver_frames.json")
+	require.NoError(t, err)
+	defer reader.Close()
+	decoder := json.NewDecoder(reader)
+
+	var line *logging.JSONLine
+	require.NoError(t, decoder.Decode(&line))
+	require.NotEmpty(t, line)
+
+	sm.AddFrame(line.Direction == logging.DirectionOut, line.Frame)
+
+	line = nil
+	require.NoError(t, decoder.Decode(&line))
+	require.NotEmpty(t, line)
+
+	sm.AddFrame(line.Direction == logging.DirectionOut, line.Frame)
 
 	return sm
 }
