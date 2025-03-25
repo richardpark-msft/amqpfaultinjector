@@ -2,7 +2,9 @@ package faultinjectors
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,8 +12,10 @@ import (
 	"time"
 
 	"github.com/Azure/amqpfaultinjector/internal/logging"
+	"github.com/Azure/amqpfaultinjector/internal/proto"
 	"github.com/Azure/amqpfaultinjector/internal/proto/encoding"
 	"github.com/Azure/amqpfaultinjector/internal/proto/frames"
+	"github.com/Azure/amqpfaultinjector/internal/utils"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/stretchr/testify/require"
 )
@@ -144,6 +148,172 @@ func TestMirroring(t *testing.T) {
 	})
 }
 
+func TestMirrorParams_Address_AlreadyAnAttachFrame(t *testing.T) {
+	td := []struct {
+		Out             bool
+		Role            encoding.Role
+		ExpectedAddress string
+	}{
+		{Out: true, Role: encoding.RoleReceiver, ExpectedAddress: "source-address"},
+		{Out: false, Role: encoding.RoleReceiver, ExpectedAddress: "target-address"},
+		{Out: true, Role: encoding.RoleSender, ExpectedAddress: "target-address"},
+		{Out: false, Role: encoding.RoleSender, ExpectedAddress: "source-address"},
+	}
+
+	for _, d := range td {
+		t.Run(fmt.Sprintf("ATTACH frame: %v", d), func(t *testing.T) {
+			body := &frames.PerformAttach{
+				Name:   "name",
+				Role:   d.Role,
+				Source: &frames.Source{Address: "source-address"},
+				Target: &frames.Target{Address: "target-address"},
+			}
+
+			p := MirrorCallbackParams{
+				Out:   d.Out,
+				Frame: &frames.Frame{Body: body},
+			}
+
+			require.Equal(t, d.ExpectedAddress, p.Address())
+			require.NotNil(t, p.attachFrame)
+			require.Equal(t, d.ExpectedAddress, p.Address())
+		})
+	}
+}
+
+func TestMirrorParams_Address_LinkFrame(t *testing.T) {
+	t.Run("sender attach", func(t *testing.T) {
+		sm := loadStateMap(t)
+
+		p := MirrorCallbackParams{
+			Out: true,
+			Frame: &frames.Frame{
+				Header: frames.Header{Channel: 300},
+				Body: &frames.PerformFlow{
+					Handle: utils.Ptr(uint32(300)),
+				},
+			},
+			StateMap: sm,
+		}
+
+		require.Equal(t, "testQueue", p.Address())
+
+		p = MirrorCallbackParams{
+			Out: false,
+			Frame: &frames.Frame{
+				Header: frames.Header{Channel: 1001},
+				Body: &frames.PerformFlow{
+					Handle: utils.Ptr(uint32(1002)),
+				},
+			},
+			StateMap: sm,
+		}
+
+		require.Equal(t, "testQueue", p.Address())
+	})
+
+	t.Run("receiver attach", func(t *testing.T) {
+		sm := loadStateMap(t)
+
+		p := MirrorCallbackParams{
+			Out: true,
+			Frame: &frames.Frame{
+				Header: frames.Header{Channel: 200},
+				Body: &frames.PerformFlow{
+					Handle: utils.Ptr(uint32(200)),
+				},
+			},
+			StateMap: sm,
+		}
+
+		require.Equal(t, "testQueue", p.Address())
+
+		p = MirrorCallbackParams{
+			Out: false,
+			Frame: &frames.Frame{
+				Header: frames.Header{Channel: 0},
+				Body: &frames.PerformFlow{
+					Handle: utils.Ptr(uint32(0)),
+				},
+			},
+			StateMap: sm,
+		}
+
+		require.Equal(t, "testQueue", p.Address())
+	})
+
+	// localChannel, localHandle := uint16(150), uint32(100)
+	// remoteChannel, remoteHandle := uint16(250), uint32(200)
+
+	// sm.AddFrame(true, &frames.Frame{
+	// 	Header: frames.Header{Channel: localChannel},
+	// 	Body: &frames.PerformAttach{
+	// 		Handle: localHandle,
+	// 		Role:   encoding.RoleReceiver,
+	// 		Source: &frames.Source{Address: "local-source-address"},
+	// 	},
+	// })
+
+	// sm.AddFrame(false, &frames.Frame{
+	// 	Header: frames.Header{Channel: remoteChannel},
+	// 	Body: &frames.PerformAttach{
+	// 		Handle: remoteHandle,
+	// 		Role:   encoding.RoleSender,
+	// 		Target: &frames.Target{Address: "remote-target-address"},
+	// 	},
+	// })
+
+	// p := MirrorCallbackParams{
+	// 	Out: true,
+	// 	Frame: &frames.Frame{
+	// 		Header: frames.Header{Channel: localChannel},
+	// 		Body: &frames.PerformFlow{
+	// 			Handle: &localHandle,
+	// 		}},
+	// 	StateMap: sm,
+	// }
+
+	// require.Equal(t, "local-source-address", p.Address())
+
+	// p = MirrorCallbackParams{
+	// 	Out: false,
+	// 	Frame: &frames.Frame{
+	// 		Header: frames.Header{Channel: remoteChannel},
+	// 		Body: &frames.PerformFlow{
+	// 			Handle: &remoteHandle,
+	// 		}},
+	// 	StateMap: sm,
+	// }
+
+	// require.Equal(t, "remote-source-address", p.Address())
+
+	// t.Run("session frame, no ATTACH frame", func(t *testing.T) {
+	// 	pf := newTestAttachFrame()
+
+	// 	p := MirrorCallbackParams{
+	// 		Frame: pf.Frame,
+	// 		// won't even need this because the frame, itself, is an ATTACH frame.
+	// 		// StateMap: proto.NewStateMap(),
+	// 	}
+
+	// 	p.Out = true
+	// 	pf.Body.Role = encoding.RoleReceiver
+	// 	require.Equal(t, "source-address", p.Address())
+
+	// 	p.Out = false
+	// 	pf.Body.Role = encoding.RoleReceiver
+	// 	require.Equal(t, "target-address", p.Address())
+
+	// 	p.Out = true
+	// 	pf.Body.Role = encoding.RoleSender
+	// 	require.Equal(t, "target-address", p.Address())
+
+	// 	p.Out = false
+	// 	pf.Body.Role = encoding.RoleSender
+	// 	require.Equal(t, "source-address", p.Address())
+	// })
+}
+
 func newFrameLoggerForTest(t *testing.T, prefix string) *logging.FrameLogger {
 	dir, err := os.MkdirTemp("", prefix+"*")
 	require.NoError(t, err)
@@ -166,4 +336,66 @@ func oopsAllAttachFrameNames(allFrames []*frames.Frame) []string {
 	}
 
 	return names
+}
+
+// LoadStateMap loads up some pre-recorded ATTACH frames int our statemap:
+// - a receiver, with local channel/handle: 200/200, remote 0/0
+// - a sender, with local channel/handle 300/300, remote 1001/1002
+func loadStateMap(t *testing.T) *proto.StateMap {
+	sm := proto.NewStateMap()
+
+	// handle/channel are 200 for these example files.
+	reader, err := os.Open("testdata/receiver_attach_frames.json")
+	require.NoError(t, err)
+	defer reader.Close()
+	decoder := json.NewDecoder(reader)
+
+	var line *logging.JSONLine
+	require.NoError(t, decoder.Decode(&line))
+	require.NotEmpty(t, line)
+
+	sm.AddFrame(line.Direction == logging.DirectionOut, line.Frame)
+
+	line = nil
+	require.NoError(t, decoder.Decode(&line))
+	require.NotEmpty(t, line)
+
+	sm.AddFrame(line.Direction == logging.DirectionOut, line.Frame)
+
+	// handle/channel are 300 for these example files.
+	reader, err = os.Open("testdata/sender_attach_frames.json")
+	require.NoError(t, err)
+	defer reader.Close()
+	decoder = json.NewDecoder(reader)
+
+	line = nil
+	require.NoError(t, decoder.Decode(&line))
+	require.NotEmpty(t, line)
+
+	sm.AddFrame(line.Direction == logging.DirectionOut, line.Frame)
+
+	line = nil
+	require.NoError(t, decoder.Decode(&line))
+	require.NotEmpty(t, line)
+
+	sm.AddFrame(line.Direction == logging.DirectionOut, line.Frame)
+
+	// sanity check, all the frames are loaded and with the proper direction.
+	out := true
+	localSenderAF := sm.LookupAttachFrame(out, 300, 300)
+	require.Equal(t, "testQueue", localSenderAF.Body.Address(out))
+
+	out = false
+	remoteSenderAF := sm.LookupAttachFrame(out, 1001, 1002)
+	require.Equal(t, "testQueue", remoteSenderAF.Body.Address(out))
+
+	out = true
+	localReceiveAF := sm.LookupAttachFrame(out, 200, 200)
+	require.Equal(t, "testQueue", localReceiveAF.Body.Address(out))
+
+	out = false
+	remoteReceiverAF := sm.LookupAttachFrame(out, 0, 0)
+	require.Equal(t, "testQueue", remoteReceiverAF.Body.Address(out))
+
+	return sm
 }
