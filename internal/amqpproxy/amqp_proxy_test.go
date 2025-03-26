@@ -1,4 +1,4 @@
-package amqpfaultinjector_test
+package amqpproxy_test
 
 import (
 	"context"
@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azure/amqpfaultinjector"
-	"github.com/Azure/amqpfaultinjector/internal/testhelpers"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
+	"github.com/richardpark-msft/amqpfaultinjector"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/amqpproxy"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/testhelpers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,7 +62,7 @@ func TestAMQPProxy(t *testing.T) {
 }
 
 type testAMQPProxy struct {
-	*amqpfaultinjector.AMQPProxy
+	*amqpproxy.AMQPProxy
 	JSONLFile          string
 	ServiceBusEndpoint string
 	ServiceBusQueue    string
@@ -79,7 +80,7 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 
 	jsonlFile := filepath.Join(dir, "amqpproxy-traffic")
 
-	amqpProxy, err := amqpfaultinjector.NewAMQPProxy(
+	amqpProxy, err := amqpproxy.NewAMQPProxy(
 		"localhost:5671",
 		serviceBusEndpoint,
 		&amqpfaultinjector.AMQPProxyOptions{

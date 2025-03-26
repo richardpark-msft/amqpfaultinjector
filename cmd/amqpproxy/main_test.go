@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azure/amqpfaultinjector/internal/testhelpers"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/testhelpers"
 	"github.com/stretchr/testify/require"
 )
 

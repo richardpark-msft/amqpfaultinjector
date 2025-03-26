@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azure/amqpfaultinjector/internal/faultinjectors"
-	"github.com/Azure/amqpfaultinjector/internal/proto/frames"
-	"github.com/Azure/amqpfaultinjector/internal/testhelpers"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/faultinjectors"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/proto/frames"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/testhelpers"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
