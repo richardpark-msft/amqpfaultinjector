@@ -79,7 +79,7 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 
 	jsonlFile := filepath.Join(dir, "amqpproxy-traffic")
 
-	env := testhelpers.LoadEnv("../..")
+	env := testhelpers.InitLiveTests("../..")
 
 	amqpProxy, err := amqpproxy.NewAMQPProxy(
 		"localhost:5671",

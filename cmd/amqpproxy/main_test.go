@@ -17,7 +17,7 @@ import (
 var testEnv testhelpers.TestEnv
 
 func TestMain(m *testing.M) {
-	testEnv = testhelpers.LoadEnv("../..")
+	testEnv = testhelpers.InitLiveTests("../..")
 	os.Exit(m.Run())
 }
 
