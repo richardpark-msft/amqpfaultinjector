@@ -10,7 +10,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
-	"github.com/richardpark-msft/amqpfaultinjector"
 	"github.com/richardpark-msft/amqpfaultinjector/internal/amqpproxy"
 	"github.com/richardpark-msft/amqpfaultinjector/internal/testhelpers"
 	"github.com/stretchr/testify/require"
@@ -80,10 +79,12 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 
 	jsonlFile := filepath.Join(dir, "amqpproxy-traffic")
 
+	env := testhelpers.LoadEnv("../..")
+
 	amqpProxy, err := amqpproxy.NewAMQPProxy(
 		"localhost:5671",
-		serviceBusEndpoint,
-		&amqpfaultinjector.AMQPProxyOptions{
+		env.ServiceBusEndpoint,
+		&amqpproxy.AMQPProxyOptions{
 			BaseJSONName: jsonlFile,
 			CertDir:      dir,
 		})
@@ -98,7 +99,7 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 	return testAMQPProxy{
 		AMQPProxy:          amqpProxy,
 		JSONLFile:          jsonlFile,
-		ServiceBusEndpoint: serviceBusEndpoint,
-		ServiceBusQueue:    serviceBusQueue,
+		ServiceBusEndpoint: env.ServiceBusEndpoint,
+		ServiceBusQueue:    env.ServiceBusQueue,
 	}
 }
