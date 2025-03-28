@@ -95,8 +95,9 @@ func mustCreateAMQPProxy(t *testing.T, args []string) *testAMQPProxy {
 		cmd.Name(),
 		"--logs", dir,
 		"--cert", dir,
-		"--host", testEnv.ServiceBusEndpoint)
-
+		"--host", testEnv.ServiceBusEndpoint,
+		"--exclude-payload-data", // to avoid bloating logs with large messages
+	)
 	t.Logf("Command line args for fault injector: %#v", args)
 	cmd.SetArgs(args)
 

@@ -121,16 +121,10 @@ func (l *JSONLogger) flush(out bool, excludePayloadData bool) error {
 				if openFrame := l.sm.GetOpenFrame(true); openFrame != nil {
 					jsonLine.Connection = &openFrame.Body.ContainerID
 				}
-				if excludePayloadData {
-					if transferFrame, ok := frame.Body.(*frames.PerformTransfer); ok {
-						transferFrame.Payload = nil
-					}
-				}
 			}
 
 			updateJSONLine(out, l.sm, frame, jsonLine)
-
-			if err := l.transformers.Apply(frame, jsonLine); err != nil {
+			if err := l.transformers.Apply(frame, jsonLine, excludePayloadData); err != nil {
 				return err
 			}
 

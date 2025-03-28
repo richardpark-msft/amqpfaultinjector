@@ -16,12 +16,20 @@ type transformers struct {
 	multipartsIn  []byte
 }
 
-func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine) error {
+func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, excludePayloadData bool) error {
 	if payload, extra, err := tf.transformPutToken(fr, jsonFrame); err != nil {
 		return err
 	} else {
 		jsonFrame.Frame = payload
 		jsonFrame.MessageData = extra
+		// TODO:
+		if jsonFrame.Frame != nil && excludePayloadData {
+			if jsonFrame.Frame.Body.Type() == frames.BodyTypeTransfer {
+				transferFrame := jsonFrame.Frame.Body.(*frames.PerformTransfer)
+				jsonFrame.MessageData.Message.Data = nil
+				transferFrame.Payload = nil
+			}
+		}
 		return nil
 	}
 }
