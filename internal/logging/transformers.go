@@ -26,7 +26,9 @@ func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, excludePayl
 		if jsonFrame.Frame != nil && excludePayloadData {
 			if jsonFrame.Frame.Body.Type() == frames.BodyTypeTransfer {
 				transferFrame := jsonFrame.Frame.Body.(*frames.PerformTransfer)
-				jsonFrame.MessageData.Message.Data = nil
+				if jsonFrame.MessageData.Message != nil {
+					jsonFrame.MessageData.Message.Data = nil
+				}
 				transferFrame.Payload = nil
 			}
 		}
