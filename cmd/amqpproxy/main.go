@@ -26,6 +26,7 @@ func newAMQPProxyCommand(ctx context.Context) *cobra.Command {
 	internal.AddCommonFlags(cmd)
 
 	disableStateTracking := cmd.Flags().Bool("disable-state-tracing", false, "Disables state tracing - useful if you are experiencing problems or intentionally creating invalid AMQP traffic but still want logging.")
+	excludePayloadData := cmd.Flags().Bool("exclude-payload-data", false, "Excludes the data in the payload from logging - useful if you're sending/receiving large messages and trying to avoid bloated logs.")
 	disableTLS := cmd.Flags().Bool("disable-tls", false, "Disables TLS for the local endpoint ONLY. All traffic is still sent, via TLS, to Azure.")
 	enableBinFiles := cmd.Flags().Bool("enable-bin-files", false, "Enables writing out amqpproxy-bin files. These files do NOT redact secrets")
 
@@ -56,6 +57,7 @@ func newAMQPProxyCommand(ctx context.Context) *cobra.Command {
 				DisableTLSForLocalEndpoint: *disableTLS,
 				DisableStateTracing:        *disableStateTracking,
 				CertDir:                    cf.CertDir,
+				ExcludePayloadData:         *excludePayloadData,
 			})
 
 		if err != nil {

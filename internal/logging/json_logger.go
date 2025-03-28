@@ -52,14 +52,14 @@ type JSONLogger struct {
 // packet - the raw bytes, as they are written on the TCP connection.
 //
 // NOTE: this call cannot be used concurrently.
-func (l *JSONLogger) AddPacket(out bool, packet []byte) error {
+func (l *JSONLogger) AddPacket(out bool, packet []byte, excludePayloadData bool) error {
 	if out {
 		l.fbout.Add(packet)
 	} else {
 		l.fbin.Add(packet)
 	}
 
-	return l.flush(out)
+	return l.flush(out, excludePayloadData)
 }
 
 type JSONMessageData struct {
@@ -87,7 +87,7 @@ type JSONLine struct {
 }
 
 // flush writes out any complete frames it finds within its buffer.
-func (l *JSONLogger) flush(out bool) error {
+func (l *JSONLogger) flush(out bool, excludePayloadData bool) error {
 	direction := DirectionIn
 	fb := l.fbin
 
@@ -120,6 +120,11 @@ func (l *JSONLogger) flush(out bool) error {
 
 				if openFrame := l.sm.GetOpenFrame(true); openFrame != nil {
 					jsonLine.Connection = &openFrame.Body.ContainerID
+				}
+				if excludePayloadData {
+					if transferFrame, ok := frame.Body.(*frames.PerformTransfer); ok {
+						transferFrame.Payload = nil
+					}
 				}
 			}
 
