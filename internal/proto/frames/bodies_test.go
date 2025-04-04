@@ -34,7 +34,7 @@ func TestPerformAttach(t *testing.T) {
 		// with those values 'nil', and a DETACH frame with the error immediately after.
 		fr := frames.PerformAttach{
 			Name:   "Y-dfQa6Qdr3yhJmmsE5boDHNMYLDQugm_MKf4ZzwwUGObvmKiSBa_g",
-			Role:   true,
+			Role:   encoding.RoleReceiver,
 			Source: nil,
 			Target: nil,
 		}
@@ -44,7 +44,7 @@ func TestPerformAttach(t *testing.T) {
 
 		fr = frames.PerformAttach{
 			Name:   "Y-dfQa6Qdr3yhJmmsE5boDHNMYLDQugm_MKf4ZzwwUGObvmKiSBa_g",
-			Role:   false,
+			Role:   encoding.RoleSender,
 			Source: nil,
 			Target: nil,
 		}
