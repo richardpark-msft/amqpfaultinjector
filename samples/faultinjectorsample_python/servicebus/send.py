@@ -65,6 +65,6 @@ with servicebus_client:
     with sender:
         send_single_message(sender)
         # Namespace should be premium to send messages > 256 KB
-        send_large_messages(sender)
+        # send_large_messages(sender)
 
 print('Finished sending.')

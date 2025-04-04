@@ -10,7 +10,6 @@ from dotenv import find_dotenv, load_dotenv
 import ssl
 from azure.servicebus import ServiceBusClient, TransportType
 from azure.identity import DefaultAzureCredential
-from datetime import datetime
 
 
 import logging
@@ -48,8 +47,9 @@ with servicebus_client:
 
     receiver = servicebus_client.get_queue_receiver(queue_name=QUEUE_NAME)
     with receiver:
-        received_msgs = receiver.receive_messages(max_message_count=1, max_wait_time=5)
+        received_msgs = receiver.receive_messages(max_message_count=1)
         print('Received messages.')
         for msg in received_msgs:
+            print(msg)
             receiver.complete_message(msg)
         print('Completed messages.')
