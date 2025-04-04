@@ -24,8 +24,8 @@ logger.addHandler(handler)
 
 find_dotenv()
 load_dotenv()
-FULLY_QUALIFIED_NAMESPACE = os.environ["SERVICEBUS_FULLY_QUALIFIED_NAMESPACE"]
-QUEUE_NAME = os.environ["SERVICEBUS_QUEUE_NAME"]
+FULLY_QUALIFIED_NAMESPACE = os.environ["SERVICEBUS_ENDPOINT"]
+QUEUE_NAME = os.environ["SERVICEBUS_QUEUE"]
 # The custom endpoint address to use for establishing a connection to the Service Bus service,
 # allowing network requests to be routed through any application gateways
 # or other paths needed for the host environment.
