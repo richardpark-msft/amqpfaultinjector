@@ -728,9 +728,9 @@ func (a *PerformAttach) Address(out bool) (address string) {
 
 	// NOTE: the source and target are reversed when the ATTACH frames
 	// are incoming.
-	case !out && a.Role == encoding.RoleSender:
+	case !out && a.Role == encoding.RoleSender && a.Source != nil:
 		return a.Source.Address
-	case !out && a.Role == encoding.RoleReceiver:
+	case !out && a.Role == encoding.RoleReceiver && a.Target != nil:
 		return a.Target.Address
 	default:
 		return ""
