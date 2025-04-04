@@ -16,14 +16,23 @@ type transformers struct {
 	multipartsIn  []byte
 }
 
-func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, excludePayloadData bool) error {
-	if payload, extra, err := tf.transformPutToken(fr, jsonFrame); err != nil {
+type TransformerOptions struct {
+	// ExcludePayloadData if true, excludes the payload data from the JSON logs.
+	ExcludePayloadData bool
+}
+
+func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformerOptions *TransformerOptions) error {
+	payload, extra, err := tf.transformPutToken(fr, jsonFrame)
+	if err != nil {
+		return err
+	}
+	if pay {
 		return err
 	} else {
 		jsonFrame.Frame = payload
 		jsonFrame.MessageData = extra
 		// TODO:
-		if jsonFrame.Frame != nil && excludePayloadData {
+		if jsonFrame.Frame != nil && transformerOptions.ExcludePayloadData {
 			if jsonFrame.Frame.Body.Type() == frames.BodyTypeTransfer {
 				transferFrame := jsonFrame.Frame.Body.(*frames.PerformTransfer)
 				if jsonFrame.MessageData.Message != nil {

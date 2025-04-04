@@ -57,7 +57,9 @@ func newAMQPProxyCommand(ctx context.Context) *cobra.Command {
 				DisableTLSForLocalEndpoint: *disableTLS,
 				DisableStateTracing:        *disableStateTracking,
 				CertDir:                    cf.CertDir,
-				ExcludePayloadData:         *excludePayloadData,
+				TransformerOptions: &logging.TransformerOptions{
+					ExcludePayloadData: *excludePayloadData,
+				},
 			})
 
 		if err != nil {

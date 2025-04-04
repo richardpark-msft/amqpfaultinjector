@@ -47,9 +47,7 @@ type AMQPProxyOptions struct {
 
 	DisableStateTracing bool
 
-	// ExcludePayloadData bool // if true, excludes the payload data from the JSON logs.
-	// This is primarily used for testing with large messages, so we can see the AMQP frames without the payload data.
-	ExcludePayloadData bool
+	TransformerOptions *logging.TransformerOptions
 }
 
 // localEndpoint is the endpoint that the proxy will listen on.
@@ -265,7 +263,7 @@ loop:
 		packet := connBytes[0:n]
 
 		if jsonLogger != nil {
-			if err := jsonLogger.AddPacket(out, packet, proxy.options.ExcludePayloadData); err != nil {
+			if err := jsonLogger.AddPacket(out, packet, proxy.options.TransformerOptions); err != nil {
 				slogger.Error("Failed to write JSON packet to log", "error", err)
 			}
 		}
