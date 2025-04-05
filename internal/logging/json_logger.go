@@ -59,7 +59,7 @@ func (l *JSONLogger) AddPacket(out bool, packet []byte, transformerOptions *Tran
 		l.fbin.Add(packet)
 	}
 
-	return l.flush(out, transformerOptions.ExcludePayloadData)
+	return l.flush(out, transformerOptions)
 }
 
 type JSONMessageData struct {

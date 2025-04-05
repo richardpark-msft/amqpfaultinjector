@@ -26,23 +26,16 @@ func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformer
 	if err != nil {
 		return err
 	}
-	if pay {
-		return err
-	} else {
-		jsonFrame.Frame = payload
-		jsonFrame.MessageData = extra
-		// TODO:
-		if jsonFrame.Frame != nil && transformerOptions.ExcludePayloadData {
-			if jsonFrame.Frame.Body.Type() == frames.BodyTypeTransfer {
-				transferFrame := jsonFrame.Frame.Body.(*frames.PerformTransfer)
-				if jsonFrame.MessageData.Message != nil {
-					jsonFrame.MessageData.Message.Data = nil
-				}
-				transferFrame.Payload = nil
-			}
+	jsonFrame.Frame = payload
+	jsonFrame.MessageData = extra
+	if jsonFrame.Frame != nil && transformerOptions.ExcludePayloadData {
+		transferFrame, isTransfer := jsonFrame.Frame.Body.(*frames.PerformTransfer)
+		if isTransfer && jsonFrame.MessageData.Message != nil {
+			jsonFrame.MessageData.Message.Data = nil
+			transferFrame.Payload = nil
 		}
-		return nil
 	}
+	return nil
 }
 
 func (tf *transformers) getMultipart(direction Direction) *[]byte {
