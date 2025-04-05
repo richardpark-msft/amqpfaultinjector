@@ -33,7 +33,7 @@ type FrameLogger struct {
 	transformers transformers
 }
 
-func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any, excludePayloadData bool) error {
+func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any, transformerOptions *TransformerOptions) error {
 	direction := DirectionIn
 
 	if out {
@@ -58,7 +58,7 @@ func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any, exclude
 
 	updateJSONLine(out, l.sm, fr, jsonLine)
 
-	if err := l.transformers.Apply(fr, jsonLine, excludePayloadData); err != nil {
+	if err := l.transformers.Apply(fr, jsonLine, transformerOptions); err != nil {
 		return err
 	}
 
