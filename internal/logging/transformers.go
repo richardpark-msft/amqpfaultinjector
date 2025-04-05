@@ -16,14 +16,31 @@ type transformers struct {
 	multipartsIn  []byte
 }
 
-func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine) error {
-	if payload, extra, err := tf.transformPutToken(fr, jsonFrame); err != nil {
+type TransformerOptions struct {
+	// ExcludePayloadData if true, excludes the payload data from the JSON logs.
+	ExcludePayloadData bool
+}
+
+func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformerOptions *TransformerOptions) error {
+	// Remove put token from payload, including multipart data.
+	payload, extra, err := tf.transformPutToken(fr, jsonFrame)
+	if err != nil {
 		return err
-	} else {
-		jsonFrame.Frame = payload
-		jsonFrame.MessageData = extra
-		return nil
 	}
+	jsonFrame.Frame = payload
+	jsonFrame.MessageData = extra
+	// Exclude TRANSFER payload data from JSON logs
+	if jsonFrame.Frame != nil && transformerOptions.ExcludePayloadData {
+		transferFrame, isTransfer := jsonFrame.Frame.Body.(*frames.PerformTransfer)
+		if isTransfer && jsonFrame.MessageData.Message != nil {
+			// Remove payload from TRANSFER frame and only Data from MessageData, which
+			// may take up a lot of space.
+			// Keep the rest of the MessageData, as all other info may be useful.
+			jsonFrame.MessageData.Message.Data = nil
+			transferFrame.Payload = nil
+		}
+	}
+	return nil
 }
 
 func (tf *transformers) getMultipart(direction Direction) *[]byte {

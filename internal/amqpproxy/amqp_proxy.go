@@ -46,6 +46,8 @@ type AMQPProxyOptions struct {
 	DisableTLSForLocalEndpoint bool
 
 	DisableStateTracing bool
+
+	TransformerOptions *logging.TransformerOptions
 }
 
 // localEndpoint is the endpoint that the proxy will listen on.
@@ -261,7 +263,7 @@ loop:
 		packet := connBytes[0:n]
 
 		if jsonLogger != nil {
-			if err := jsonLogger.AddPacket(out, packet); err != nil {
+			if err := jsonLogger.AddPacket(out, packet, proxy.options.TransformerOptions); err != nil {
 				slogger.Error("Failed to write JSON packet to log", "error", err)
 			}
 		}

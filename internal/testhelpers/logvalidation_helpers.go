@@ -65,6 +65,49 @@ func ValidateLog(t *testing.T, jsonlFile string) {
 	require.True(t, foundCBS)
 }
 
+func ValidateLogExcludePayloadData(t *testing.T, jsonlFile string) {
+	// check that the files meet all of our expectations:
+	// EntityPath should be filled out on all relevant frames
+	// $cbs put-token calls should show up
+	var lines = MustReadJSON(t, jsonlFile)
+
+	foundCBS := false
+
+	for _, line := range lines {
+		switch line.FrameType {
+		case frames.BodyTypeAttach:
+		case frames.BodyTypeDetach:
+		case frames.BodyTypeFlow:
+		case frames.BodyTypeTransfer:
+			if line.EntityPath != "$cbs" && line.EntityPath != "$management" {
+				// TODO: b/c Frame.Body and MessageData.Message are both raw messages, we can't check that the payload is empty.
+				require.Empty(t, line.Frame.Body)
+				require.Empty(t, line.MessageData.Message)
+			}
+		case
+			// session frames don't have an entity path
+			frames.BodyTypeBegin,
+			frames.BodyTypeEnd,
+			frames.BodyTypeDisposition,
+			// connection level frames don't have an entity path
+			frames.BodyTypeOpen,
+			frames.BodyTypeClose,
+			frames.BodyTypeSASLChallenge,
+			frames.BodyTypeSASLInit,
+			frames.BodyTypeSASLMechanisms,
+			frames.BodyTypeSASLOutcome,
+			frames.BodyTypeSASLResponse,
+			frames.BodyTypeEmptyFrame:
+			require.Empty(t, line.EntityPath)
+		}
+
+		require.NotEmpty(t, line.FrameType)
+		require.Empty(t, line.RawBody(), "Only filled out for RawFrames, not expected for this test")
+	}
+
+	require.True(t, foundCBS)
+}
+
 // This type is exactly the same as JSONLine except for Frame and Extra, which are left as raw messages
 // which can be deserialized into a more specific type.
 type logLine struct {
