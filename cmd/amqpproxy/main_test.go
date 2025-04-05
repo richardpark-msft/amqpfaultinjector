@@ -67,6 +67,32 @@ func TestAMQPProxy(t *testing.T) {
 	testhelpers.ValidateLog(t, testData.JSONLFile)
 }
 
+func TestAMQPProxyExcludePayloadData(t *testing.T) {
+	testEnv.SkipIfNotLive(t)
+
+	testData := mustCreateAMQPProxyExcludePayloadData(t, []string{})
+
+	receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
+	require.NoError(t, err)
+
+	defer func() {
+		err := receiver.Close(context.Background())
+		require.NoError(t, err)
+	}()
+
+	sender, err := testData.ServiceBusClient.NewSender(testData.ServiceBusQueue, nil)
+	require.NoError(t, err)
+
+	defer func() {
+		err := sender.Close(context.Background())
+		require.NoError(t, err)
+	}()
+
+	err = sender.SendMessage(context.Background(), &azservicebus.Message{Body: []byte("hello world")}, nil)
+	require.NoError(t, err)
+	testhelpers.ValidateLogExcludePayloadData(t, testData.JSONLFile)
+}
+
 type testAMQPProxy struct {
 	cancelAMQPProxy context.CancelFunc
 	JSONLFile       string
@@ -96,7 +122,6 @@ func mustCreateAMQPProxy(t *testing.T, args []string) *testAMQPProxy {
 		"--logs", dir,
 		"--cert", dir,
 		"--host", testEnv.ServiceBusEndpoint,
-		"--exclude-payload-data", // to avoid bloating logs with large messages
 	)
 	t.Logf("Command line args for fault injector: %#v", args)
 	cmd.SetArgs(args)
@@ -137,6 +162,14 @@ func mustCreateAMQPProxy(t *testing.T, args []string) *testAMQPProxy {
 		tfi.MustClose(t)
 	})
 
+	return tfi
+}
+
+func mustCreateAMQPProxyExcludePayloadData(t *testing.T, args []string) *testAMQPProxy {
+	args = []string{"--exclude-payload-data"}
+	t.Logf("Creating AMQP Proxy with %#v", args)
+
+	tfi := mustCreateAMQPProxy(t, args)
 	return tfi
 }
 
