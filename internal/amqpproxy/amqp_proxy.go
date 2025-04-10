@@ -168,7 +168,7 @@ func (proxy *AMQPProxy) ListenAndServe() error {
 
 			if proxy.options.BaseJSONName != "" {
 				// generate a JSONlFile for this connection.
-				tmpJSONLogger, err := logging.NewJSONLogger(fmt.Sprintf("%s-%d.json", proxy.options.BaseJSONName, connectionIndex), !proxy.options.DisableStateTracing)
+				tmpJSONLogger, err := logging.NewJSONLogger(fmt.Sprintf("%s-%d.json", proxy.options.BaseJSONName, connectionIndex), !proxy.options.DisableStateTracing, proxy.options.TransformerOptions)
 
 				if err != nil {
 					return err
@@ -263,7 +263,7 @@ loop:
 		packet := connBytes[0:n]
 
 		if jsonLogger != nil {
-			if err := jsonLogger.AddPacket(out, packet, proxy.options.TransformerOptions); err != nil {
+			if err := jsonLogger.AddPacket(out, packet); err != nil {
 				slogger.Error("Failed to write JSON packet to log", "error", err)
 			}
 		}

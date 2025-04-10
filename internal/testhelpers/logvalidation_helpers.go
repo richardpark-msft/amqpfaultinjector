@@ -85,6 +85,10 @@ func ValidateLogExcludePayloadData(t *testing.T, jsonlFile string) {
 					var messageData = UnmarshalRawMessage(t, line.MessageData.Message)
 					require.Contains(t, messageData, "Data")
 					require.Nil(t, messageData["Data"], "Data should be null")
+					require.Contains(t, messageData, "Value")
+					require.Nil(t, messageData["Value"], "Value should be null")
+					require.Contains(t, messageData, "Sequence")
+					require.Nil(t, messageData["Sequence"], "Sequence should be null")
 				}
 			}
 		}

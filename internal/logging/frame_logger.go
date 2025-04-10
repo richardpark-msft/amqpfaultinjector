@@ -10,7 +10,7 @@ import (
 
 // NewFrameLogger creates a FrameLogger instance.
 // file - the path to the file to write to.
-func NewFrameLogger(file string) (*FrameLogger, error) {
+func NewFrameLogger(file string, transformerOptions *TransformerOptions) (*FrameLogger, error) {
 	writer, err := NewSerializedWriter(file)
 
 	if err != nil {
@@ -18,8 +18,9 @@ func NewFrameLogger(file string) (*FrameLogger, error) {
 	}
 
 	logger := &FrameLogger{
-		writer: writer,
-		sm:     proto.NewStateMap(),
+		writer:             writer,
+		sm:                 proto.NewStateMap(),
+		transformerOptions: transformerOptions,
 	}
 
 	return logger, nil
@@ -28,12 +29,13 @@ func NewFrameLogger(file string) (*FrameLogger, error) {
 // FrameLogger is basically a JSONLogger, but instead of accumulating bytes it assumes
 // you'll hand it complete frames.Frames instead.
 type FrameLogger struct {
-	writer       *SerializedWriter
-	sm           *proto.StateMap
-	transformers transformers
+	writer             *SerializedWriter
+	sm                 *proto.StateMap
+	transformers       transformers
+	transformerOptions *TransformerOptions
 }
 
-func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any, transformerOptions *TransformerOptions) error {
+func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any) error {
 	direction := DirectionIn
 
 	if out {
@@ -58,7 +60,7 @@ func (l *FrameLogger) AddFrame(out bool, fr *frames.Frame, metadata any, transfo
 
 	updateJSONLine(out, l.sm, fr, jsonLine)
 
-	if err := l.transformers.Apply(fr, jsonLine, transformerOptions); err != nil {
+	if err := l.transformers.Apply(fr, jsonLine, l.transformerOptions); err != nil {
 		return err
 	}
 

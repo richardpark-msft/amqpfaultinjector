@@ -12,7 +12,7 @@ import (
 
 // NewJSONLogger creates a JSONLogger instance.
 // file - the path to the file to write to.
-func NewJSONLogger(file string, enableStateTracing bool) (*JSONLogger, error) {
+func NewJSONLogger(file string, enableStateTracing bool, transformerOptions *TransformerOptions) (*JSONLogger, error) {
 	writer, err := NewSerializedWriter(file)
 
 	if err != nil {
@@ -26,10 +26,11 @@ func NewJSONLogger(file string, enableStateTracing bool) (*JSONLogger, error) {
 	}
 
 	logger := &JSONLogger{
-		fbout:  &frames.Buffer{},
-		fbin:   &frames.Buffer{},
-		writer: writer,
-		sm:     sm,
+		fbout:              &frames.Buffer{},
+		fbin:               &frames.Buffer{},
+		writer:             writer,
+		sm:                 sm,
+		transformerOptions: transformerOptions,
 	}
 
 	return logger, nil
@@ -43,7 +44,8 @@ type JSONLogger struct {
 	fbin *frames.Buffer
 	sm   *proto.StateMap
 
-	transformers transformers
+	transformers       transformers
+	transformerOptions *TransformerOptions
 }
 
 // AddPacket adds in raw bytes, typically received from an AMQP connection. It will
@@ -52,14 +54,14 @@ type JSONLogger struct {
 // packet - the raw bytes, as they are written on the TCP connection.
 //
 // NOTE: this call cannot be used concurrently.
-func (l *JSONLogger) AddPacket(out bool, packet []byte, transformerOptions *TransformerOptions) error {
+func (l *JSONLogger) AddPacket(out bool, packet []byte) error {
 	if out {
 		l.fbout.Add(packet)
 	} else {
 		l.fbin.Add(packet)
 	}
 
-	return l.flush(out, transformerOptions)
+	return l.flush(out)
 }
 
 type JSONMessageData struct {
@@ -87,7 +89,7 @@ type JSONLine struct {
 }
 
 // flush writes out any complete frames it finds within its buffer.
-func (l *JSONLogger) flush(out bool, transformerOptions *TransformerOptions) error {
+func (l *JSONLogger) flush(out bool) error {
 	direction := DirectionIn
 	fb := l.fbin
 
@@ -124,7 +126,7 @@ func (l *JSONLogger) flush(out bool, transformerOptions *TransformerOptions) err
 			}
 
 			updateJSONLine(out, l.sm, frame, jsonLine)
-			if err := l.transformers.Apply(frame, jsonLine, transformerOptions); err != nil {
+			if err := l.transformers.Apply(frame, jsonLine, l.transformerOptions); err != nil {
 				return err
 			}
 

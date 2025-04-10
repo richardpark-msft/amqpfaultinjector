@@ -37,6 +37,8 @@ func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformer
 			transferFrame.Payload = nil
 			if jsonFrame.MessageData.Message != nil {
 				jsonFrame.MessageData.Message.Data = nil
+				jsonFrame.MessageData.Message.Value = nil
+				jsonFrame.MessageData.Message.Sequence = nil
 			}
 		}
 	}
