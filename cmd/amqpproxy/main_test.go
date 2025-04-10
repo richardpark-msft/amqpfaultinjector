@@ -70,7 +70,7 @@ func TestAMQPProxy(t *testing.T) {
 func TestAMQPProxyExcludePayloadData(t *testing.T) {
 	testEnv.SkipIfNotLive(t)
 
-	testData := mustCreateAMQPProxyExcludePayloadData(t, []string{})
+	testData := mustCreateAMQPProxy(t, []string{"--exclude-payload-data"})
 
 	receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
 	require.NoError(t, err)
@@ -90,6 +90,11 @@ func TestAMQPProxyExcludePayloadData(t *testing.T) {
 
 	err = sender.SendMessage(context.Background(), &azservicebus.Message{Body: []byte("hello world")}, nil)
 	require.NoError(t, err)
+
+	messages, err := receiver.ReceiveMessages(context.Background(), 1, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, messages)
+
 	testhelpers.ValidateLogExcludePayloadData(t, testData.JSONLFile)
 }
 
@@ -162,14 +167,6 @@ func mustCreateAMQPProxy(t *testing.T, args []string) *testAMQPProxy {
 		tfi.MustClose(t)
 	})
 
-	return tfi
-}
-
-func mustCreateAMQPProxyExcludePayloadData(t *testing.T, args []string) *testAMQPProxy {
-	args = []string{"--exclude-payload-data"}
-	t.Logf("Creating AMQP Proxy with %#v", args)
-
-	tfi := mustCreateAMQPProxy(t, args)
 	return tfi
 }
 
