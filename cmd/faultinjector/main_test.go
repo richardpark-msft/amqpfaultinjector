@@ -236,6 +236,47 @@ func TestFaultInjector_VerbatimPassthrough(t *testing.T) {
 	require.NotZero(t, rawFrames)
 }
 
+func TestFaultInjector_ExcludePayloadData(t *testing.T) {
+	testEnv.SkipIfNotLive(t)
+
+	testData := mustCreateFaultInjector(t, newSlowTransferFrames, []string{"--delay", "1s", "--exclude-payload-data"})
+
+	{
+		sender, err := testData.ServiceBusClient.NewSender(testData.ServiceBusQueue, nil)
+		require.NoError(t, err)
+
+		for i := range 2 {
+			err = sender.SendMessage(context.Background(), &azservicebus.Message{
+				Body: []byte(fmt.Sprintf("hello world %d", i)),
+			}, nil)
+			require.NoError(t, err)
+		}
+
+		err = sender.Close(context.Background())
+		require.NoError(t, err)
+	}
+
+	// the default 10s delay is going to make it so we can't receive more than 1 message at a time.
+	{
+		receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
+		require.NoError(t, err)
+
+		// ensure the receiver is warm - this doesn't cause TRANSFER frames over our link so it won't be
+		// affected by the fault injector.
+		_, err = receiver.PeekMessages(context.Background(), 1, nil)
+		require.NoError(t, err)
+
+		t.Logf("Starting to receive messages - TRANSFERS should start being delayed")
+		messages, err := receiver.ReceiveMessages(context.Background(), 100, nil)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(messages))
+	}
+
+	t.Logf("Receiving complete, closing fault injector")
+	testData.MustClose(t)
+	testhelpers.ValidateLogExcludePayloadData(t, testData.JSONLFile)
+}
+
 type testFaultInjector struct {
 	cancelFaultInjector context.CancelFunc
 	JSONLFile           string
@@ -306,7 +347,7 @@ func mustCreateFaultInjector(t *testing.T, createCommand func(ctx context.Contex
 		cancelFaultInjector: cancel,
 		JSONLFile:           jsonlFile,
 		ServiceBusEndpoint:  testEnv.ServiceBusEndpoint,
-		ServiceBusQueue:     "testqueue",
+		ServiceBusQueue:     testEnv.ServiceBusQueue,
 		ServiceBusClient:    client,
 	}
 

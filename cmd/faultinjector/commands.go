@@ -15,6 +15,7 @@ import (
 )
 
 const addressFileFlagName = "address-file"
+const excludePayloadDataFlagName = "exclude-payload-data"
 
 func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -22,6 +23,7 @@ func newRootCommand() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().String(addressFileFlagName, "", "File to write the address the faultinjector is listening on. If enabled, the faultinjector will start on a random port, instead of 5671.")
+	rootCmd.PersistentFlags().Bool(excludePayloadDataFlagName, false, "Excludes the data in the payload from logging - useful if you're sending/receiving large messages and trying to avoid bloated logs.")
 
 	internal.AddCommonFlags(rootCmd)
 	return rootCmd
@@ -41,6 +43,12 @@ func runFaultInjector(ctx context.Context, cmd *cobra.Command, injector faultinj
 		port = 0
 	}
 
+	excludePayloadData, err := cmd.Flags().GetBool(excludePayloadDataFlagName)
+
+	if err != nil {
+		return err
+	}
+
 	cf, err := internal.ExtractCommonFlags(cmd)
 
 	if err != nil {
@@ -56,6 +64,9 @@ func runFaultInjector(ctx context.Context, cmd *cobra.Command, injector faultinj
 			TLSKeyLogFile: filepath.Join(cf.LogsDir, "faultinjector-tlskeys.txt"),
 			AddressFile:   addressFile,
 			CertDir:       cf.CertDir,
+			TransformerOptions: &logging.TransformerOptions{
+				ExcludePayloadData: excludePayloadData,
+			},
 		})
 
 	if err != nil {

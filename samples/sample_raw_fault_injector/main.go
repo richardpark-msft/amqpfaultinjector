@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/richardpark-msft/amqpfaultinjector/internal/faultinjectors"
+	"github.com/richardpark-msft/amqpfaultinjector/internal/logging"
 	"github.com/richardpark-msft/amqpfaultinjector/internal/proto/frames"
 	"github.com/richardpark-msft/amqpfaultinjector/internal/utils"
 	"github.com/spf13/cobra"
@@ -30,6 +31,9 @@ func main() {
 			&faultinjectors.FaultInjectorOptions{
 				// enable logging all traffic to a JSON file
 				JSONLFile: filepath.Join(*logs, "sample-rawfaultinjector-traffic.json"),
+				TransformerOptions: &logging.TransformerOptions{
+					ExcludePayloadData: true,
+				},
 			})
 
 		if err != nil {

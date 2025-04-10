@@ -130,7 +130,7 @@ func TestJSONLoggerWithRustReplay(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	jsonLogger, err := NewJSONLogger(file.Name(), false)
+	jsonLogger, err := NewJSONLogger(file.Name(), false, nil)
 	require.NoError(t, err)
 
 	numOut := 0

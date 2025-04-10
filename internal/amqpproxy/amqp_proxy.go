@@ -46,6 +46,8 @@ type AMQPProxyOptions struct {
 	DisableTLSForLocalEndpoint bool
 
 	DisableStateTracing bool
+
+	TransformerOptions *logging.TransformerOptions
 }
 
 // localEndpoint is the endpoint that the proxy will listen on.
@@ -166,7 +168,7 @@ func (proxy *AMQPProxy) ListenAndServe() error {
 
 			if proxy.options.BaseJSONName != "" {
 				// generate a JSONlFile for this connection.
-				tmpJSONLogger, err := logging.NewJSONLogger(fmt.Sprintf("%s-%d.json", proxy.options.BaseJSONName, connectionIndex), !proxy.options.DisableStateTracing)
+				tmpJSONLogger, err := logging.NewJSONLogger(fmt.Sprintf("%s-%d.json", proxy.options.BaseJSONName, connectionIndex), !proxy.options.DisableStateTracing, proxy.options.TransformerOptions)
 
 				if err != nil {
 					return err
