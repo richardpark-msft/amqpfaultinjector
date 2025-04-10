@@ -22,22 +22,22 @@ type TransformerOptions struct {
 }
 
 func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformerOptions *TransformerOptions) error {
-	// Remove put token from payload, including multipart data.
+	// Process multi-part TRANSFER frames and redact sensitive data.
 	payload, extra, err := tf.transformPutToken(fr, jsonFrame)
 	if err != nil {
 		return err
 	}
 	jsonFrame.Frame = payload
 	jsonFrame.MessageData = extra
-	// Exclude TRANSFER payload data from JSON logs
+	// Optionally exclude TRANSFER payload data from logs.
 	if jsonFrame.Frame != nil && transformerOptions.ExcludePayloadData {
 		transferFrame, isTransfer := jsonFrame.Frame.Body.(*frames.PerformTransfer)
-		if isTransfer && jsonFrame.MessageData.Message != nil {
-			// Remove payload from TRANSFER frame and only Data from MessageData, which
-			// may take up a lot of space.
-			// Keep the rest of the MessageData, as all other info may be useful.
-			jsonFrame.MessageData.Message.Data = nil
+		if isTransfer {
+			// Remove large payload and message data, keep other useful info.
 			transferFrame.Payload = nil
+			if jsonFrame.MessageData.Message != nil {
+				jsonFrame.MessageData.Message.Data = nil
+			}
 		}
 	}
 	return nil
