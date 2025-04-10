@@ -70,15 +70,10 @@ func TestAMQPProxy(t *testing.T) {
 func TestAMQPProxyExcludePayloadData(t *testing.T) {
 	testEnv.SkipIfNotLive(t)
 
-	testData := mustCreateAMQPProxy(t, []string{"--exclude-payload-data"})
-
-	receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
-	require.NoError(t, err)
-
-	defer func() {
-		err := receiver.Close(context.Background())
-		require.NoError(t, err)
-	}()
+	transformerOptions := []string{
+		"--exclude-payload-data",
+	}
+	testData := mustCreateAMQPProxy(t, transformerOptions)
 
 	sender, err := testData.ServiceBusClient.NewSender(testData.ServiceBusQueue, nil)
 	require.NoError(t, err)
@@ -91,10 +86,19 @@ func TestAMQPProxyExcludePayloadData(t *testing.T) {
 	err = sender.SendMessage(context.Background(), &azservicebus.Message{Body: []byte("hello world")}, nil)
 	require.NoError(t, err)
 
+	receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
+	require.NoError(t, err)
+
+	defer func() {
+		err := receiver.Close(context.Background())
+		require.NoError(t, err)
+	}()
+
 	messages, err := receiver.ReceiveMessages(context.Background(), 1, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, messages)
 
+	// Log includes sender and receiver frames
 	testhelpers.ValidateLogExcludePayloadData(t, testData.JSONLFile)
 }
 

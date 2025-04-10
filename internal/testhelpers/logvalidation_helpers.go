@@ -71,41 +71,26 @@ func ValidateLogExcludePayloadData(t *testing.T, jsonlFile string) {
 	// $cbs put-token calls should show up
 	var lines = MustReadJSON(t, jsonlFile)
 
-	foundCBS := false
-
 	for _, line := range lines {
 		switch line.FrameType {
 		case frames.BodyTypeAttach:
 		case frames.BodyTypeDetach:
 		case frames.BodyTypeFlow:
 		case frames.BodyTypeTransfer:
-			if line.EntityPath != "$cbs" && line.EntityPath != "$management" {
-				// TODO: b/c Frame.Body and MessageData.Message are both raw messages, we can't check that the payload is empty.
-				require.Empty(t, line.Frame.Body)
-				require.Empty(t, line.MessageData.Message)
+			if line.EntityPath != "$cbs" {
+				var message = UnmarshalRawMessage(t, line.Frame.Body)
+				require.Contains(t, message, "Payload")
+				require.Nil(t, message["Payload"], "Payload should be null")
+				if line.MessageData.Message != nil {
+					var messageData = UnmarshalRawMessage(t, line.MessageData.Message)
+					require.Contains(t, messageData, "Data")
+					require.Nil(t, messageData["Data"], "Data should be null")
+				}
 			}
-		case
-			// session frames don't have an entity path
-			frames.BodyTypeBegin,
-			frames.BodyTypeEnd,
-			frames.BodyTypeDisposition,
-			// connection level frames don't have an entity path
-			frames.BodyTypeOpen,
-			frames.BodyTypeClose,
-			frames.BodyTypeSASLChallenge,
-			frames.BodyTypeSASLInit,
-			frames.BodyTypeSASLMechanisms,
-			frames.BodyTypeSASLOutcome,
-			frames.BodyTypeSASLResponse,
-			frames.BodyTypeEmptyFrame:
-			require.Empty(t, line.EntityPath)
 		}
-
 		require.NotEmpty(t, line.FrameType)
 		require.Empty(t, line.RawBody(), "Only filled out for RawFrames, not expected for this test")
 	}
-
-	require.True(t, foundCBS)
 }
 
 // This type is exactly the same as JSONLine except for Frame and Extra, which are left as raw messages
@@ -134,6 +119,14 @@ type logLine struct {
 
 func (ll logLine) RawBody() []byte {
 	return ll.Frame.Raw
+}
+
+func UnmarshalRawMessage(t *testing.T, raw []byte) map[string]interface{} {
+	var messageObject map[string]interface{}
+	err := json.Unmarshal(raw, &messageObject)
+	require.NoError(t, err)
+
+	return messageObject
 }
 
 func MustReadJSON(t *testing.T, path string) []logLine {
