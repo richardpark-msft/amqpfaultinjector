@@ -11,7 +11,7 @@ require (
 	github.com/madflojo/testcerts v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	go.uber.org/mock v0.5.0
+	go.uber.org/mock v0.5.1
 )
 
 // These are test dependencies, only.
