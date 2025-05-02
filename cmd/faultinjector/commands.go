@@ -127,17 +127,19 @@ func newDetachAfterTransferCommand(ctx context.Context) *cobra.Command {
 
 func newSlowTransferFrames(ctx context.Context) *cobra.Command {
 	var delay *time.Duration
+	var after *int
 
 	cmd := &cobra.Command{
 		Use:   "transfer_delay",
 		Short: "Slows down TRANSFER frames",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			injector := faultinjectors.NewSlowTransfersInjector(*delay)
+			injector := faultinjectors.NewSlowTransfersInjector(*delay, *after)
 			return runFaultInjector(ctx, cmd, injector.Callback)
 		},
 	}
 
 	delay = cmd.Flags().Duration("delay", 10*time.Second, "Amount of delay to introduce before each TRANSFER frame")
+	after = cmd.Flags().Int("after", 0, "Start delaying after this number of TRANSFER frames have been sent")
 	return cmd
 }
 
