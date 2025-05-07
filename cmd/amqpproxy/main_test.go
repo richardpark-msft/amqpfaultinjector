@@ -95,6 +95,7 @@ func mustCreateAMQPProxy(t *testing.T, args []string) *testAMQPProxy {
 		cmd.Name(),
 		"--logs", dir,
 		"--cert", dir,
+		"--enable-hexdump-files", dir,
 		"--host", testEnv.ServiceBusEndpoint)
 
 	t.Logf("Command line args for fault injector: %#v", args)

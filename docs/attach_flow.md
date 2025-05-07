@@ -5,6 +5,7 @@ NOTE, in these examples I made it so the local AMQP client starts their count fo
 ## ATTACH
 
 I send my sender link attach:
+
 * The Channel is _my_ channel (200)
 * The Handle is _my_ handle (200)
 * The name is a randomly generated link name.
@@ -14,6 +15,7 @@ I send my sender link attach:
 ```
 
 They reply with their corresponding receiver link attach:
+
 * Channel: 0
 * Handle: 0
 
@@ -21,9 +23,9 @@ They reply with their corresponding receiver link attach:
 {"Time":"2024-11-16T14:32:53.510879544-08:00","Direction":"in","Type":"*frames.PerformAttach","Header":{"Size":131,"DataOffset":2,"FrameType":0,"Channel":0,"Raw":"AAAAgwIAAAA="},"Body":{"Name":"uMx_K7TyMJ9kONWRvRaHNY7on01-7mPo-5j_n335VsFLyfh_BXr4iw","Handle":0,"Role":true,"SenderSettleMode":2,"ReceiverSettleMode":0,"Source":{"Address":"","Durable":0,"ExpiryPolicy":"session-end","Timeout":0,"Dynamic":false,"DynamicNodeProperties":null,"DistributionMode":"","Filter":null,"DefaultOutcome":null,"Outcomes":null,"Capabilities":null},"Target":{"Address":"testqueue","Durable":0,"ExpiryPolicy":"session-end","Timeout":0,"Dynamic":false,"DynamicNodeProperties":null,"Capabilities":null},"Unsettled":null,"IncompleteUnsettled":false,"InitialDeliveryCount":0,"MaxMessageSize":262144,"OfferedCapabilities":null,"DesiredCapabilities":null,"Properties":null}}
 ```
 
-they reply with _their_ attach. 
+they reply with _their_ attach.
 
-*The role is the inverse of my role
+* The role is the inverse of my role
 * The channel is their channel
 * The handle is their handle
 * The name is _my_ name
@@ -45,9 +47,10 @@ I send them _my_ channel, _my_ handle and a closed flag.
 
 ```json
 {"Time":"2024-11-16T14:32:53.604109668-08:00","Direction":"out","Type":"*frames.PerformDetach","Header":{"Size":23,"DataOffset":2,"FrameType":0,"Channel":200,"Raw":"AAAAFwIAAMg="},"Body":{"Handle":200,"Closed":true,"Error":null}}
-``` 
+```
 
 They reply with _their_ channel, their _handle_ and a closed flag.
+
 * Channel: 0
 * Handle: 0
 

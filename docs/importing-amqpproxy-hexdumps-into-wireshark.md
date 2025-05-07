@@ -5,14 +5,14 @@ contain the actual type information for each field, without interpretation beyon
 
 ## Instructions
 
-1. Start the AMQP proxy, with your usual flags, and add `--enable-bin-files <path to folder>`. AMQP proxy 
-   will write hexdump files into this folder. Note, you can write bin files and JSON files, they operate 
+1. Start the AMQP proxy, with your usual flags, and add `--enable-hexdump-files <path to folder>`. AMQP proxy
+   will write hexdump files into this folder. Note, you can write bin files and JSON files, they operate
    independently.
 1. Connect your program to the proxy, as usual.
 1. After your program completes, close the proxy and open up Wireshark.
 1. Choose "File | Import from hex dump"
 1. In the import dialog choose the following options:
-   
+
    * Offsets: `Hexadecimal`
    * Direction indication: ✅
    * ASCII identification: ✅
