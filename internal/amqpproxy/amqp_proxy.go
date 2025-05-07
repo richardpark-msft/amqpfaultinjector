@@ -257,10 +257,8 @@ loop:
 
 		packet := connBytes[0:n]
 
-		if logger != nil {
-			if err := logger.AddPacket(out, packet); err != nil {
-				slogger.Error("Failed to write packet to log", "error", err)
-			}
+		if err := logger.AddPacket(out, packet); err != nil {
+			slogger.Error("Failed to write packet to log", "error", err)
 		}
 
 		if _, err := dest.Write(packet); err != nil {
