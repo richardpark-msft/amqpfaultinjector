@@ -298,8 +298,8 @@ func oopsAllAttachFrameNames(allFrames []*frames.Frame) []string {
 }
 
 // LoadStateMap loads up some pre-recorded ATTACH frames int our statemap:
-// - a receiver, with local channel/handle: 200/200, remote 0/0
-// - a sender, with local channel/handle 300/300, remote 1001/1002
+//   - a receiver, with local channel/handle: 200/200, remote 0/0
+//   - a sender, with local channel/handle 300/300, remote 1001/1002
 func loadStateMap(t *testing.T) *proto.StateMap {
 	sm := proto.NewStateMap()
 
@@ -359,6 +359,9 @@ func loadStateMap(t *testing.T) *proto.StateMap {
 	return sm
 }
 
+// loadCBSStateMap loads a map with $cbs frames.
+//   - Ours: channel 200, handle 201
+//   - Theirs: channel 0, handle 1
 func loadCBSStateMap(t *testing.T) *proto.StateMap {
 	sm := proto.NewStateMap()
 
