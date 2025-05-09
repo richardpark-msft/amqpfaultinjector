@@ -39,21 +39,24 @@ func TestMultiTransferInjector(t *testing.T) {
 	// 	Validate the result
 	require.Len(t, resultFrames, len(transferBody.Payload)) // Each byte should result in a separate frame
 
+	// now, take all the individual frames and combine them, and unmarshal it.
+	var fullPayload []byte
+
 	for i, frame := range resultFrames {
 		require.Equal(t, faultinjectors.MetaFrameActionAdded, frame.Action)
 		require.NotNil(t, frame.Frame)
 
 		// Validate the payload of each frame
-		clonedTransferFrame, ok := frame.Frame.Body.(*frames.PerformTransfer)
+		splitTransferFrame, ok := frame.Frame.Body.(*frames.PerformTransfer)
 		require.True(t, ok)
-		require.Equal(t, []byte{transferBody.Payload[i]}, clonedTransferFrame.Payload)
+		require.Equal(t, []byte{transferBody.Payload[i]}, splitTransferFrame.Payload)
 
 		// Validate the "More" flag
 		expectedMore := i != len(transferBody.Payload)-1
-		require.Equal(t, expectedMore, clonedTransferFrame.More)
+		require.Equal(t, expectedMore, splitTransferFrame.More)
+
+		fullPayload = append(fullPayload, splitTransferFrame.Payload...)
 	}
 
-	// now, take all the individual frames and combine them, and unmarshal it.
-	var fullPayload []byte
-
+	require.Equal(t, "Hello world!", string(fullPayload))
 }
