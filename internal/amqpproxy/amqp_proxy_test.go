@@ -57,12 +57,12 @@ func TestAMQPProxy(t *testing.T) {
 	require.NoError(t, receiver.Close(context.Background()))
 	require.NoError(t, testData.Close())
 
-	testhelpers.ValidateLog(t, testData.JSONLFile+"-1.json")
+	testhelpers.ValidateLog(t, testData.JSONLFile)
 }
 
 type testAMQPProxy struct {
 	*amqpproxy.AMQPProxy
-	JSONLFile          string
+	JSONLFile          string // path to the JSONL file that's generated for the first connection
 	ServiceBusEndpoint string
 	ServiceBusQueue    string
 }
@@ -77,16 +77,15 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 		os.RemoveAll(dir)
 	})
 
-	jsonlFile := filepath.Join(dir, "amqpproxy-traffic")
-
 	env := testhelpers.InitLiveTests("../..")
 
 	amqpProxy, err := amqpproxy.NewAMQPProxy(
 		"localhost:5671",
 		env.ServiceBusEndpoint,
 		&amqpproxy.AMQPProxyOptions{
-			BaseJSONName: jsonlFile,
-			CertDir:      dir,
+			LogFolder:  dir,
+			EnableJSON: true,
+			CertDir:    dir,
 		})
 	require.NoError(t, err)
 
@@ -98,7 +97,7 @@ func mustCreateAMQPProxy(t *testing.T) testAMQPProxy {
 
 	return testAMQPProxy{
 		AMQPProxy:          amqpProxy,
-		JSONLFile:          jsonlFile,
+		JSONLFile:          filepath.Join(dir, "amqpproxy-traffic-1.json"),
 		ServiceBusEndpoint: env.ServiceBusEndpoint,
 		ServiceBusQueue:    env.ServiceBusQueue,
 	}

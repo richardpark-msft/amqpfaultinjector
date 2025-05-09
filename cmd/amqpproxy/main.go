@@ -27,7 +27,7 @@ func newAMQPProxyCommand(ctx context.Context) *cobra.Command {
 
 	disableStateTracking := cmd.Flags().Bool("disable-state-tracing", false, "Disables state tracing - useful if you are experiencing problems or intentionally creating invalid AMQP traffic but still want logging.")
 	disableTLS := cmd.Flags().Bool("disable-tls", false, "Disables TLS for the local endpoint ONLY. All traffic is still sent, via TLS, to Azure.")
-	enableBinFiles := cmd.Flags().Bool("enable-bin-files", false, "Enables writing out amqpproxy-bin files. These files do NOT redact secrets")
+	enableBinFiles := cmd.Flags().Bool("enable-hexdump-files", false, "Enables writing out Wireshark compatible hexdump files. These files do NOT redact secrets")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		slogger := logging.SloggerFromContext(ctx)
@@ -40,19 +40,14 @@ func newAMQPProxyCommand(ctx context.Context) *cobra.Command {
 
 		slogger.Info("Connecting", "host", cf.Host)
 
-		var baseBinName string
-
-		if *enableBinFiles {
-			baseBinName = filepath.Join(cf.LogsDir, "amqpproxy-bin")
-		}
-
 		fi, err := amqpproxy.NewAMQPProxy(
 			"localhost:5671",
 			cf.Host,
 			&amqpproxy.AMQPProxyOptions{
-				BaseJSONName:               filepath.Join(cf.LogsDir, "amqpproxy-traffic"),
+				LogFolder:                  cf.LogsDir,
+				EnableJSON:                 true,
+				EnableHexDumps:             *enableBinFiles,
 				TLSKeyLogFile:              filepath.Join(cf.LogsDir, "amqpproxy-tlskeys.txt"),
-				BaseBinName:                baseBinName,
 				DisableTLSForLocalEndpoint: *disableTLS,
 				DisableStateTracing:        *disableStateTracking,
 				CertDir:                    cf.CertDir,
