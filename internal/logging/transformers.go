@@ -30,7 +30,7 @@ func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformer
 	jsonFrame.Frame = payload
 	jsonFrame.MessageData = extra
 	// Optionally exclude TRANSFER payload data from logs.
-	if jsonFrame.Frame != nil && transformerOptions.ExcludePayloadData {
+	if jsonFrame.Frame != nil && transformerOptions != nil && transformerOptions.ExcludePayloadData {
 		transferFrame, isTransfer := jsonFrame.Frame.Body.(*frames.PerformTransfer)
 		if isTransfer && jsonFrame.EntityPath != EntityPathCBS {
 			// Remove large payload and message data, keep other useful info.
