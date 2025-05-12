@@ -1,13 +1,11 @@
 package logging
 
 import (
-	"os"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/richardpark-msft/amqpfaultinjector/internal/proto/frames"
 	"github.com/richardpark-msft/amqpfaultinjector/internal/proto/models"
-	"github.com/richardpark-msft/amqpfaultinjector/internal/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -121,35 +119,4 @@ func mustMarshalBinary(t *testing.T, msg *models.Message) []byte {
 	data, err := msg.MarshalBinary()
 	require.NoError(t, err)
 	return data
-}
-
-func TestJSONLoggerWithRustReplay(t *testing.T) {
-	t.Skip("Manually uncomment when doing troubleshooting")
-
-	file, err := os.CreateTemp("", "jsonwriter*")
-	require.NoError(t, err)
-	defer os.Remove(file.Name())
-
-	jsonLogger, err := NewJSONLogger(file.Name(), false, nil)
-	require.NoError(t, err)
-
-	numOut := 0
-	numIn := 0
-
-	for binLine, err := range utils.ParseBinFile("<bin file path goes here>") {
-		require.NoError(t, err)
-
-		t.Logf("%#v", binLine)
-
-		out := binLine.Label == "out"
-
-		if out {
-			numOut++
-		} else {
-			numIn++
-		}
-
-		err = jsonLogger.AddPacket(out, binLine.Packet)
-		require.NoErrorf(t, err, "%s, out: %d, in: %d", binLine.Label, numOut, numIn)
-	}
 }

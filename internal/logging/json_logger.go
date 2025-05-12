@@ -53,7 +53,8 @@ type JSONLogger struct {
 // out - whether these are packet bytes being sent to the remote service (true), or being received _from_ the remote service (false).
 // packet - the raw bytes, as they are written on the TCP connection.
 //
-// NOTE: this call cannot be used concurrently.
+// NOTE: this call can handle concurrent writes in separate directions (ie, incoming and outgoing packets can be written at the same
+// time, but it cannot handle multiple packets in the _same_ direction, concurrently).
 func (l *JSONLogger) AddPacket(out bool, packet []byte) error {
 	if out {
 		l.fbout.Add(packet)

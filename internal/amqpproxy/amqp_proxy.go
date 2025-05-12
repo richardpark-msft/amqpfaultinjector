@@ -3,13 +3,13 @@ package amqpproxy
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 
@@ -26,12 +26,9 @@ type AMQPProxy struct {
 }
 
 type AMQPProxyOptions struct {
-	// BaseJSONName is the base name we'll use when generating log files for each connection.
-	BaseJSONName string
-
-	// BinFolder is the base name we'll use when generating log files, which are just the binary data,
-	// for each connection. Primarily used for testing AMQP parsers.
-	BaseBinName string
+	LogFolder      string
+	EnableJSON     bool
+	EnableHexDumps bool
 
 	TLSKeyLogFile string
 
@@ -164,44 +161,44 @@ func (proxy *AMQPProxy) ListenAndServe() error {
 
 			connectionIndex := atomic.AddUint64(&proxy.nextFileID, 1)
 
-			var jsonLogger *logging.JSONLogger
+			ml := &logging.MultiLogger{}
 
-			if proxy.options.BaseJSONName != "" {
-				// generate a JSONlFile for this connection.
-				tmpJSONLogger, err := logging.NewJSONLogger(fmt.Sprintf("%s-%d.json", proxy.options.BaseJSONName, connectionIndex), !proxy.options.DisableStateTracing, proxy.options.TransformerOptions)
+			if proxy.options.EnableJSON {
+				path := filepath.Join(proxy.options.LogFolder, fmt.Sprintf("amqpproxy-traffic-%d.json", connectionIndex))
+				tmp, err := logging.NewJSONLogger(path, !proxy.options.DisableStateTracing, proxy.options.TransformerOptions)
 
 				if err != nil {
 					return err
 				}
 
-				jsonLogger = tmpJSONLogger
-				defer utils.CloseWithLogging("jsonWriter", jsonLogger)
+				ml.Loggers = append(ml.Loggers, tmp)
 			}
 
-			var binFileWriter io.WriteCloser
-
-			if proxy.options.BaseBinName != "" {
-				in, err := os.Create(fmt.Sprintf("%s-%d.txt", proxy.options.BaseBinName, connectionIndex))
+			if proxy.options.EnableHexDumps {
+				path := filepath.Join(proxy.options.LogFolder, fmt.Sprintf("amqpproxy-hexdump-%d.txt", connectionIndex))
+				tmp, err := logging.NewHexDumpLogger(path)
 
 				if err != nil {
 					return err
 				}
 
-				binFileWriter = in
+				ml.Loggers = append(ml.Loggers, tmp)
+			}
 
-				defer utils.CloseWithLogging("binfilewriter-in", binFileWriter)
+			if len(ml.Loggers) > 0 {
+				defer utils.CloseWithLogging("multilogger", ml)
 			}
 
 			ctx, cancel := context.WithCancelCause(context.Background())
 
 			go func() {
-				if err := proxy.mirrorConn(true, localConn, remoteConn, jsonLogger, binFileWriter); err != nil {
+				if err := proxy.mirrorConn(true, localConn, remoteConn, ml); err != nil {
 					cancel(err)
 				}
 			}()
 
 			go func() {
-				if err := proxy.mirrorConn(false, remoteConn, localConn, jsonLogger, binFileWriter); err != nil {
+				if err := proxy.mirrorConn(false, remoteConn, localConn, ml); err != nil {
 					cancel(err)
 				}
 			}()
@@ -229,7 +226,7 @@ type conn interface {
 	RemoteAddr() net.Addr
 }
 
-func (proxy *AMQPProxy) mirrorConn(out bool, source io.Reader, dest conn, jsonLogger *logging.JSONLogger, binWriter io.WriteCloser) error {
+func (proxy *AMQPProxy) mirrorConn(out bool, source io.Reader, dest conn, logger logging.Logger) error {
 	label := "in"
 
 	if out {
@@ -262,18 +259,8 @@ loop:
 
 		packet := connBytes[0:n]
 
-		if jsonLogger != nil {
-			if err := jsonLogger.AddPacket(out, packet); err != nil {
-				slogger.Error("Failed to write JSON packet to log", "error", err)
-			}
-		}
-
-		if binWriter != nil {
-			encoded := base64.StdEncoding.EncodeToString(packet)
-
-			if _, err := binWriter.Write([]byte(fmt.Sprintf("%s:%s\n", label, encoded))); err != nil {
-				slogger.Error("Failed to write bin packet to log", "error", err)
-			}
+		if err := logger.AddPacket(out, packet); err != nil {
+			slogger.Error("Failed to write packet to log", "error", err)
 		}
 
 		if _, err := dest.Write(packet); err != nil {

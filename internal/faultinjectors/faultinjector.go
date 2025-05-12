@@ -34,7 +34,8 @@ type FaultInjector struct {
 type FaultInjectorOptions struct {
 	TLSKeyLogFile string
 	JSONLFile     string
-	AddressFile   string
+
+	AddressFile string
 
 	// Folder where a certificate, for our TLS endpoint, is stored. If no certificate is present it is
 	// generated.
