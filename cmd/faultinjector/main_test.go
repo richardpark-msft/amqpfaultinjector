@@ -241,6 +241,7 @@ func TestFaultInjector_ExcludePayloadData(t *testing.T) {
 
 	testData := mustCreateFaultInjector(t, newSlowTransferFrames, []string{"--delay", "1s", "--exclude-payload-data"})
 
+	// Send messages and confirm that payload on outgoing TRANSFERs is excluded from the log
 	{
 		sender, err := testData.ServiceBusClient.NewSender(testData.ServiceBusQueue, nil)
 		require.NoError(t, err)
@@ -256,17 +257,12 @@ func TestFaultInjector_ExcludePayloadData(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// the default 10s delay is going to make it so we can't receive more than 1 message at a time.
 	{
+
+		// Receive messages and confirm that payload on incoming TRANSFERs is excluded from the log
 		receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
 		require.NoError(t, err)
 
-		// ensure the receiver is warm - this doesn't cause TRANSFER frames over our link so it won't be
-		// affected by the fault injector.
-		_, err = receiver.PeekMessages(context.Background(), 1, nil)
-		require.NoError(t, err)
-
-		t.Logf("Starting to receive messages - TRANSFERS should start being delayed")
 		messages, err := receiver.ReceiveMessages(context.Background(), 100, nil)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(messages))

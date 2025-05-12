@@ -97,6 +97,9 @@ func TestAMQPProxyExcludePayloadData(t *testing.T) {
 	messages, err := receiver.ReceiveMessages(context.Background(), 1, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, messages)
+	// Check that the message body is preserved
+	require.Len(t, messages, 1, "Should receive exactly one message")
+	require.Equal(t, "hello world", string(messages[0].Body), "Message body should be preserved even with exclude-payload-data option")
 
 	// Log includes sender and receiver frames
 	testhelpers.ValidateLogExcludePayloadData(t, testData.JSONLFile)
