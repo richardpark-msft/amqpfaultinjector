@@ -5,7 +5,7 @@
 ## From binaries
 
 Look in the [releases](https://github.com/richardpark-msft/amqpfaultinjector/releases) for AMQP proxy and fault injector binaries. Each binary
-is self-contained, and provides help if run from the command line with no arguments, with with `-h`.
+is self-contained, and provides help if run from the command line with no arguments with `--help`.
 
 ## From Source
 
@@ -14,15 +14,6 @@ For frame capture, run the amqpproxy in parallel with your sample.
 ### Install Go
 
 - Download and install the latest Go from https://go.dev/dl.
-  - Download the latest tar.gz for your OS under "Featured Downloads".
-  - Extract the tar.gz file:
-    ```
-    tar -C /usr/local -xzf go1.x.x.linux-amd64.tar.gz
-    ```
-  - Add Go to your PATH:
-    ```
-    export PATH=$PATH:/usr/local/go/bin
-    ```
 - Verify the installation:
   ```
   go version
