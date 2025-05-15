@@ -12,7 +12,7 @@ import (
 
 // NewJSONLogger creates a JSONLogger instance.
 // file - the path to the file to write to.
-func NewJSONLogger(file string, enableStateTracing bool) (*JSONLogger, error) {
+func NewJSONLogger(file string, enableStateTracing bool, transformerOptions *TransformerOptions) (*JSONLogger, error) {
 	writer, err := NewSerializedWriter(file)
 
 	if err != nil {
@@ -26,10 +26,11 @@ func NewJSONLogger(file string, enableStateTracing bool) (*JSONLogger, error) {
 	}
 
 	logger := &JSONLogger{
-		fbout:  &frames.Buffer{},
-		fbin:   &frames.Buffer{},
-		writer: writer,
-		sm:     sm,
+		fbout:              &frames.Buffer{},
+		fbin:               &frames.Buffer{},
+		writer:             writer,
+		sm:                 sm,
+		transformerOptions: transformerOptions,
 	}
 
 	return logger, nil
@@ -43,7 +44,8 @@ type JSONLogger struct {
 	fbin *frames.Buffer
 	sm   *proto.StateMap
 
-	transformers transformers
+	transformers       transformers
+	transformerOptions *TransformerOptions
 }
 
 // AddPacket adds in raw bytes, typically received from an AMQP connection. It will
@@ -125,8 +127,7 @@ func (l *JSONLogger) flush(out bool) error {
 			}
 
 			updateJSONLine(out, l.sm, frame, jsonLine)
-
-			if err := l.transformers.Apply(frame, jsonLine); err != nil {
+			if err := l.transformers.Apply(frame, jsonLine, l.transformerOptions); err != nil {
 				return err
 			}
 

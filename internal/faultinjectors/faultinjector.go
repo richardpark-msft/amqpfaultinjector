@@ -39,7 +39,8 @@ type FaultInjectorOptions struct {
 
 	// Folder where a certificate, for our TLS endpoint, is stored. If no certificate is present it is
 	// generated.
-	CertDir string
+	CertDir            string
+	TransformerOptions *logging.TransformerOptions
 }
 
 func NewFaultInjector(localEndpoint, remoteEndpoint string, injector MirrorCallback, options *FaultInjectorOptions) (*FaultInjector, error) {
@@ -73,7 +74,7 @@ func NewFaultInjector(localEndpoint, remoteEndpoint string, injector MirrorCallb
 	}
 
 	if options.JSONLFile != "" {
-		fl, err := logging.NewFrameLogger(options.JSONLFile)
+		fl, err := logging.NewFrameLogger(options.JSONLFile, options.TransformerOptions)
 
 		if err != nil {
 			utils.Panicf("failed creating framelogger at %s: %w", options.JSONLFile, err)
