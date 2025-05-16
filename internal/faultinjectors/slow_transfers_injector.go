@@ -13,32 +13,41 @@ import (
 // NewSlowTransfersInjector creates a SlowTransferFrames injector, which slows down any incoming
 // TRANSFER frames, to non-cbs/non-management links.
 //   - delayForFrame controls how long we hold onto a TRANSFER frame, before forwarding the frame to the Receiver.
-func NewSlowTransfersInjector(delayForFrame time.Duration) *SlowTransfersInjector {
+//   - afterNumFrames controls how many TRANSFER frames are sent before we start delaying.
+func NewSlowTransfersInjector(delayForFrame time.Duration, afterNumFrames int) *SlowTransfersInjector {
 	return &SlowTransfersInjector{
-		delayForFrame: delayForFrame,
+		delayForFrame:  delayForFrame,
+		afterNumFrames: afterNumFrames,
 	}
 }
 
 type SlowTransfersInjector struct {
-	delayForFrame time.Duration
+	numTransfers int
+
+	delayForFrame  time.Duration
+	afterNumFrames int
 }
 
-func (inj *SlowTransfersInjector) Callback(ctx context.Context, params MirrorCallbackParams) ([]MetaFrame, error) {
-	// `slog` is the official logging package for Go. We provide some convenience functions to set and retrieve
-	// the current slogger, using the passed in context. Logging from fault injectors should _always_ use slog.
+func (sti *SlowTransfersInjector) Callback(ctx context.Context, params MirrorCallbackParams) ([]MetaFrame, error) {
 	slogger := logging.SloggerFromContext(ctx)
 
-	// pass on, without changes:
-	if params.Out || // outbound frames
-		params.ManagementOrCBS() || // frames involving the management/cbs
-		params.Type() != frames.BodyTypeTransfer { // non-TRANSFER frames
+	if params.Out {
+		return []MetaFrame{{Action: MetaFrameActionPassthrough, Frame: params.Frame}}, nil
+	}
+	if params.ManagementOrCBS() {
 		return []MetaFrame{{Action: MetaFrameActionPassthrough, Frame: params.Frame}}, nil
 	}
 
 	transferFrame, ok := params.Frame.Body.(*frames.PerformTransfer)
 
 	if !ok {
-		utils.Panicf("BodyType was %s, but the actual body type was %T", params.Frame.Body.Type(), params.Frame.Body)
+		return []MetaFrame{{Action: MetaFrameActionPassthrough, Frame: params.Frame}}, nil
+	}
+
+	sti.numTransfers++
+
+	if sti.numTransfers <= sti.afterNumFrames {
+		return []MetaFrame{{Action: MetaFrameActionPassthrough, Frame: params.Frame}}, nil
 	}
 
 	deliveryID := "<unspecified>"
@@ -50,7 +59,7 @@ func (inj *SlowTransfersInjector) Callback(ctx context.Context, params MirrorCal
 	slogger.Info("Slowing down TRANSFER frame", "deliveryid", deliveryID, "more", transferFrame.More)
 
 	// if the sleep is cancelled then the injector is being closed out, we should exit.
-	if err := utils.Sleep(ctx, inj.delayForFrame); err != nil {
+	if err := utils.Sleep(ctx, sti.delayForFrame); err != nil {
 		return nil, err
 	}
 
