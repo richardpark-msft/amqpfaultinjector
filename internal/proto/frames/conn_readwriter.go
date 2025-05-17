@@ -11,14 +11,14 @@ import (
 // ConnReadWriter makes it simple to write or read from a stream with frames or AMQP
 // preambles.
 type ConnReadWriter struct {
-	conn      io.ReadWriter
+	conn      io.ReadWriteCloser
 	chunkSize int
 	fb        *Buffer
 }
 
 type ConnReadWriterOption func(fi *ConnReadWriter) error
 
-func NewConnReadWriter(conn io.ReadWriter, options ...ConnReadWriterOption) *ConnReadWriter {
+func NewConnReadWriter(conn io.ReadWriteCloser, options ...ConnReadWriterOption) *ConnReadWriter {
 	fi := &ConnReadWriter{
 		chunkSize: 1024 * 1024,
 		conn:      conn,
@@ -32,6 +32,10 @@ func NewConnReadWriter(conn io.ReadWriter, options ...ConnReadWriterOption) *Con
 	}
 
 	return fi
+}
+
+func (fc *ConnReadWriter) Close() error {
+	return fc.conn.Close()
 }
 
 func (fc *ConnReadWriter) Iter() iter.Seq2[PreambleOrFrame, error] {

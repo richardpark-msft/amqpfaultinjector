@@ -21,6 +21,8 @@ samples/faultinjectorsample_js/package-lock.json
 *-traffic-*.json
 *-bin-*.txt
 *-tlskeys.txt
+*.crt
+*.key
 
 # temp folder when we're creating a release
 _bin

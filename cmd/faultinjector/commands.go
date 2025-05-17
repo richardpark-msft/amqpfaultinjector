@@ -170,3 +170,23 @@ func newPassthroughCommand(ctx context.Context) *cobra.Command {
 
 	return cmd
 }
+
+func newDisconnectCommand(ctx context.Context) *cobra.Command {
+	var delay *time.Duration
+
+	cmd := &cobra.Command{
+		Use:   "disconnect",
+		Short: "Disconnects the connection after a specified number of frames",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runFaultInjector(ctx, cmd, faultinjectors.NewDisconnectAfterDelayInjector(*delay).Callback)
+		},
+	}
+
+	delay = cmd.Flags().Duration(
+		"delay",
+		time.Second,
+		"Amount of time to wait, after the first link ",
+	)
+
+	return cmd
+}
