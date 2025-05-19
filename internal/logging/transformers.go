@@ -16,14 +16,33 @@ type transformers struct {
 	multipartsIn  []byte
 }
 
-func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine) error {
-	if payload, extra, err := tf.transformPutToken(fr, jsonFrame); err != nil {
+type TransformerOptions struct {
+	// ExcludePayloadData if true, excludes the payload data from the JSON logs.
+	ExcludePayloadData bool
+}
+
+func (tf *transformers) Apply(fr *frames.Frame, jsonFrame *JSONLine, transformerOptions *TransformerOptions) error {
+	// Process multi-part TRANSFER frames and redact sensitive data.
+	payload, extra, err := tf.transformPutToken(fr, jsonFrame)
+	if err != nil {
 		return err
-	} else {
-		jsonFrame.Frame = payload
-		jsonFrame.MessageData = extra
-		return nil
 	}
+	jsonFrame.Frame = payload
+	jsonFrame.MessageData = extra
+	// Optionally exclude TRANSFER payload data from logs.
+	if jsonFrame.Frame != nil && transformerOptions != nil && transformerOptions.ExcludePayloadData {
+		transferFrame, isTransfer := jsonFrame.Frame.Body.(*frames.PerformTransfer)
+		if isTransfer && jsonFrame.EntityPath != EntityPathCBS {
+			// Remove large payload and message data, keep other useful info.
+			transferFrame.Payload = nil
+			if jsonFrame.MessageData.Message != nil {
+				jsonFrame.MessageData.Message.Data = nil
+				jsonFrame.MessageData.Message.Value = nil
+				jsonFrame.MessageData.Message.Sequence = nil
+			}
+		}
+	}
+	return nil
 }
 
 func (tf *transformers) getMultipart(direction Direction) *[]byte {

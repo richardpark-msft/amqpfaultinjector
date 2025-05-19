@@ -236,6 +236,43 @@ func TestFaultInjector_VerbatimPassthrough(t *testing.T) {
 	require.NotZero(t, rawFrames)
 }
 
+func TestFaultInjector_ExcludePayloadData(t *testing.T) {
+	testEnv.SkipIfNotLive(t)
+
+	testData := mustCreateFaultInjector(t, newSlowTransferFrames, []string{"--delay", "1s", "--exclude-payload-data"})
+
+	// Send messages and confirm that payload on outgoing TRANSFERs is excluded from the log
+	{
+		sender, err := testData.ServiceBusClient.NewSender(testData.ServiceBusQueue, nil)
+		require.NoError(t, err)
+
+		for i := range 2 {
+			err = sender.SendMessage(context.Background(), &azservicebus.Message{
+				Body: []byte(fmt.Sprintf("hello world %d", i)),
+			}, nil)
+			require.NoError(t, err)
+		}
+
+		err = sender.Close(context.Background())
+		require.NoError(t, err)
+	}
+
+	{
+
+		// Receive messages and confirm that payload on incoming TRANSFERs is excluded from the log
+		receiver, err := testData.ServiceBusClient.NewReceiverForQueue(testData.ServiceBusQueue, nil)
+		require.NoError(t, err)
+
+		messages, err := receiver.ReceiveMessages(context.Background(), 100, nil)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(messages))
+	}
+
+	t.Logf("Receiving complete, closing fault injector")
+	testData.MustClose(t)
+	testhelpers.ValidateLogExcludePayloadData(t, testData.JSONLFile)
+}
+
 type testFaultInjector struct {
 	cancelFaultInjector context.CancelFunc
 	JSONLFile           string
@@ -306,7 +343,7 @@ func mustCreateFaultInjector(t *testing.T, createCommand func(ctx context.Contex
 		cancelFaultInjector: cancel,
 		JSONLFile:           jsonlFile,
 		ServiceBusEndpoint:  testEnv.ServiceBusEndpoint,
-		ServiceBusQueue:     "testqueue",
+		ServiceBusQueue:     testEnv.ServiceBusQueue,
 		ServiceBusClient:    client,
 	}
 

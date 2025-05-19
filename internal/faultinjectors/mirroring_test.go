@@ -34,7 +34,7 @@ func TestMirroring(t *testing.T) {
 			Callback: func(ctx context.Context, params MirrorCallbackParams) ([]MetaFrame, error) {
 				return nil, nil
 			},
-			FrameLogger: newFrameLoggerForTest(t, "mirrortest"),
+			FrameLogger: newFrameLoggerForTest(t, "mirrortest", &logging.TransformerOptions{}),
 			Local:       local,
 			Remote:      remote,
 		})
@@ -273,7 +273,7 @@ func TestMirrorParams_Address_LinkFrame(t *testing.T) {
 	})
 }
 
-func newFrameLoggerForTest(t *testing.T, prefix string) *logging.FrameLogger {
+func newFrameLoggerForTest(t *testing.T, prefix string, transformerOptions *logging.TransformerOptions) *logging.FrameLogger {
 	dir, err := os.MkdirTemp("", prefix+"*")
 	require.NoError(t, err)
 
@@ -281,7 +281,7 @@ func newFrameLoggerForTest(t *testing.T, prefix string) *logging.FrameLogger {
 
 	jsonlFile := filepath.Join(dir, "mirror-traffic.json")
 
-	fl, err := logging.NewFrameLogger(jsonlFile)
+	fl, err := logging.NewFrameLogger(jsonlFile, transformerOptions)
 	require.NoError(t, err)
 
 	return fl

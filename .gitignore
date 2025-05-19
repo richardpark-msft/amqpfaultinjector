@@ -19,8 +19,11 @@ samples/faultinjectorsample_js/package-lock.json
 
 # ignoring the keys/logs files so they don't get checked in.
 *-traffic-*.json
-*-bin-*.txt
+*-hexdump-*.txt
 *-tlskeys.txt
+*.crt
+*.key
+
 *.crt
 *.key
 
