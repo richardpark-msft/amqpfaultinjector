@@ -16,7 +16,7 @@ require (
 
 // These are test dependencies, only.
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.9.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.0
 	// this is the next beta for azservicebus, which supports using a custom endpoint
 	github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus v1.9.0
 )
