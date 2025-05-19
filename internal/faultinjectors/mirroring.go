@@ -93,6 +93,10 @@ func (m *mirror) processMetaFrame(out bool, metaFrame *MetaFrame) error {
 	}
 
 	switch metaFrame.Action {
+	case MetaFrameActionDisconnect:
+		_ = m.local.Close()
+		_ = m.remote.Close()
+		return nil
 	case MetaFrameActionDropped:
 		// logged only, does not get sent.
 		return nil

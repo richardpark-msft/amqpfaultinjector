@@ -8,6 +8,9 @@ import (
 func main() {
 	rootCmd := newRootCommand()
 
+	// disconnect commands
+	rootCmd.AddCommand(newDisconnectCommand(context.Background()))
+
 	// detach commands
 	rootCmd.AddCommand(newDetachAfterDelayCommand(context.Background()))
 	rootCmd.AddCommand(newDetachAfterTransferCommand(context.Background()))

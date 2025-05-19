@@ -21,6 +21,8 @@ samples/faultinjectorsample_js/package-lock.json
 *-traffic-*.json
 *-hexdump-*.txt
 *-tlskeys.txt
+*.crt
+*.key
 
 *.crt
 *.key

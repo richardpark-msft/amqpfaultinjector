@@ -20,6 +20,9 @@ const (
 
 	// MetaFrameActionDropped indicates the frame should be logged, but should not be sent to the client/server.
 	MetaFrameActionDropped = MetaFrameAction("dropped")
+
+	// MetaFrameActionDisconnect indicates that the connection should be force-closed.
+	MetaFrameActionDisconnect = MetaFrameAction("disconnect")
 )
 
 // MetaFrame adds some metadata about the frame, as well as providing overrides for routing
